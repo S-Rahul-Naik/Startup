@@ -61,8 +61,8 @@ const Header: React.FC = () => {
               <img
                 src="/logo.png"
                 alt="EduTech Logo"
-                className="w-12 h-12 object-contain transition-transform duration-200 group-hover:scale-105"
-                style={{ maxHeight: '48px' }}
+                className="w-20 h-20 object-contain transition-transform duration-200 group-hover:scale-105"
+                style={{ maxHeight: '70px' }}
               />
               <span className="text-2xl font-extrabold bg-gradient-to-r from-blue-500 via-pink-500 to-orange-400 bg-clip-text text-transparent tracking-tight ml-2">
                 EduTech
@@ -191,18 +191,30 @@ const Header: React.FC = () => {
               </div>
             ) : (
               <div className="flex items-center space-x-3">
-                <Link
-                  to="/login"
-                  className="text-gray-700 hover:text-primary-600 font-medium transition-colors"
-                >
-                  Login
-                </Link>
-                <Link
-                  to="/register"
-                  className="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-full text-sm font-medium transition-colors transform hover:scale-105"
-                >
-                  Get Started
-                </Link>
+                <div className="flex items-center space-x-2">
+                  <Link
+                    to="/login"
+                    className="relative text-gray-700 hover:text-primary-600 font-medium transition-colors px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400"
+                    style={{ fontSize: '1rem' }}
+                    tabIndex={0}
+                    aria-label="Login"
+                    data-tooltip-id="login-tooltip"
+                  >
+                    <span className="transition-transform duration-150 ease-in-out group-hover:scale-110">Login</span>
+                    <span className="absolute left-1/2 -translate-x-1/2 mt-2 w-max px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none z-50 whitespace-nowrap">Sign in to your account</span>
+                  </Link>
+                  <Link
+                    to="/register"
+                    className="relative bg-primary-600 hover:bg-primary-700 text-white px-5 py-2 rounded-full text-base font-semibold transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary-400 shadow-lg"
+                    style={{ fontSize: '1.05rem' }}
+                    tabIndex={0}
+                    aria-label="Get Started"
+                    data-tooltip-id="getstarted-tooltip"
+                  >
+                    <span className="transition-transform duration-150 ease-in-out group-hover:scale-110">Get Started</span>
+                    <span className="absolute left-1/2 -translate-x-1/2 mt-2 w-max px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none z-50 whitespace-nowrap">Create a free account</span>
+                  </Link>
+                </div>
               </div>
             )}
 
@@ -304,17 +316,25 @@ const Header: React.FC = () => {
                 <div className="border-t border-gray-200 pt-2 space-y-2">
                   <Link
                     to="/login"
-                    className="block px-3 py-2 rounded-md text-base text-gray-700 hover:text-primary-600 hover:bg-primary-50 transition-colors"
+                    className="relative block px-4 py-3 rounded-lg text-base text-gray-700 hover:text-primary-600 hover:bg-primary-50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-400"
+                    style={{ fontSize: '1.05rem' }}
                     onClick={() => setIsMobileMenuOpen(false)}
+                    tabIndex={0}
+                    aria-label="Login"
                   >
-                    Login
+                    <span className="transition-transform duration-150 ease-in-out group-hover:scale-110">Login</span>
+                    <span className="absolute left-1/2 -translate-x-1/2 mt-2 w-max px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none z-50 whitespace-nowrap">Sign in to your account</span>
                   </Link>
                   <Link
                     to="/register"
-                    className="block px-3 py-2 rounded-md text-base bg-primary-600 text-white hover:bg-primary-700 transition-colors"
+                    className="relative block px-4 py-3 rounded-lg text-base bg-primary-600 text-white hover:bg-primary-700 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-400 shadow-lg"
+                    style={{ fontSize: '1.05rem' }}
                     onClick={() => setIsMobileMenuOpen(false)}
+                    tabIndex={0}
+                    aria-label="Get Started"
                   >
-                    Get Started
+                    <span className="transition-transform duration-150 ease-in-out group-hover:scale-110">Get Started</span>
+                    <span className="absolute left-1/2 -translate-x-1/2 mt-2 w-max px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none z-50 whitespace-nowrap">Create a free account</span>
                   </Link>
                 </div>
               )}
