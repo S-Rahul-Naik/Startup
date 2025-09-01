@@ -9,6 +9,25 @@ import {
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 
+// Helper to POST contact form
+async function sendContactForm(data: any) {
+  // Use relative path if proxy is set up, otherwise use backend URL for dev
+  const apiUrl =
+    window.location.hostname === 'localhost'
+      ? 'http://localhost:5001/api/contact'
+      : '/api/contact';
+  const res = await fetch(apiUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to send message');
+  }
+  return res.json();
+}
+
 const ContactPage: React.FC = () => {
   const [formData, setFormData] = useState({
     name: '',
@@ -30,20 +49,12 @@ const ContactPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-
     try {
-      // Simulate form submission
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      toast.success('Message sent successfully! We\'ll get back to you soon.');
-      setFormData({
-        name: '',
-        email: '',
-        phone: '',
-        subject: '',
-        message: ''
-      });
-    } catch (error) {
-      toast.error('Failed to send message. Please try again.');
+      await sendContactForm(formData);
+      toast.success("Message sent successfully! We'll get back to you soon.");
+      setFormData({ name: '', email: '', phone: '', subject: '', message: '' });
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to send message. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -53,7 +64,7 @@ const ContactPage: React.FC = () => {
     {
       icon: PhoneIcon,
       title: 'Phone',
-      value: '+91 90303 33433',
+      value: '+91 76720 39975',
       description: 'Call us anytime'
     },
     {
@@ -65,7 +76,7 @@ const ContactPage: React.FC = () => {
     {
       icon: MapPinIcon,
       title: 'Address',
-      value: '1st Floor, 1-5-558, 2nd St, Balaji Colony, Tirupati, Andhra Pradesh 517502',
+      value: 'Bellary, Karnataka 583104',
       description: 'Visit our office'
     },
     {
@@ -261,7 +272,7 @@ const ContactPage: React.FC = () => {
                     For urgent inquiries or technical support, please call us directly at:
                   </p>
                   <div className="text-2xl font-bold text-primary-600">
-                    +91 90303 33433
+                    +91 76720 39975
                   </div>
                   <p className="text-sm text-gray-500 mt-2">
                     Available during business hours

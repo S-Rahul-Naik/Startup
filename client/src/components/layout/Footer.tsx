@@ -14,7 +14,6 @@ const Footer: React.FC = () => {
     company: [
       { name: 'About Us', href: '/about' },
       { name: 'Our Team', href: '/about#team' },
-      { name: 'Careers', href: '/careers' },
       { name: 'Contact', href: '/contact' },
     ],
     services: [
@@ -55,11 +54,27 @@ const Footer: React.FC = () => {
           {/* Company Info */}
           <div className="lg:col-span-2">
             <div className="flex items-center space-x-2 mb-4">
-              <div className="w-10 h-10 bg-gradient-to-br from-primary-600 to-secondary-600 rounded-lg flex items-center justify-center">
-                <AcademicCapIcon className="w-6 h-6 text-white" />
-              </div>
-              <span className="text-xl font-bold">Edu Tech</span>
+              {/* <img
+                src="/images/edutech-footer-logo.png"
+                alt="EduTech Logo"
+                className="w-24 h-24 object-contain rounded-lg shadow-lg"
+                style={{ background: 'transparent' }}
+              />
+              <span className="text-xl font-bold">EduTech</span> */}
             </div>
+              <div className="flex items-center mb-4">
+                <a href="/#hero" className="flex items-center group" style={{ textDecoration: 'none' }}>
+                  <img
+                    src="/images/edutech-footer-logo.png"
+                    alt="EduTech Logo"
+                    className="w-20 h-20 md:w-28 md:h-28 object-contain rounded-lg shadow-lg transition-transform duration-200 group-hover:scale-105"
+                    style={{ background: 'transparent' }}
+                  />
+                  <span className="ml-4 text-2xl md:text-3xl font-bold bg-gradient-to-r from-blue-400 via-pink-400 to-orange-400 bg-clip-text text-transparent drop-shadow-lg">
+                    EduTech
+                  </span>
+                </a>
+              </div>
             <p className="text-gray-300 mb-6 leading-relaxed">
               Your trusted partner for academic excellence. We provide cutting-edge projects, 
               expert mentorship, and comprehensive support to accelerate your learning journey.
@@ -86,14 +101,14 @@ const Footer: React.FC = () => {
           </div>
 
           {/* Company Links */}
-          <div>
-            <h3 className="text-lg font-semibold mb-4 text-white">Company</h3>
-            <ul className="space-y-2">
+          <div className="min-w-[160px] flex flex-col items-start justify-start">
+            <h3 className="text-lg font-bold mb-4 text-white tracking-wide">Company</h3>
+            <ul className="flex flex-col gap-2 w-full">
               {footerLinks.company.map((link) => (
-                <li key={link.name}>
+                <li key={link.name} className="w-full">
                   <Link
                     to={link.href}
-                    className="text-gray-300 hover:text-primary-400 transition-colors"
+                    className="block w-full text-gray-300 hover:text-primary-400 transition-colors text-base px-1 py-1 rounded focus:outline-none focus:ring-2 focus:ring-primary-400"
                   >
                     {link.name}
                   </Link>
@@ -138,26 +153,6 @@ const Footer: React.FC = () => {
         </div>
 
         {/* Newsletter Subscription */}
-        <div className="mt-12 pt-8 border-t border-gray-800">
-          <div className="max-w-md">
-            <h3 className="text-lg font-semibold mb-2 text-white">
-              Stay Updated
-            </h3>
-            <p className="text-gray-300 mb-4">
-              Subscribe to our newsletter for the latest project updates and academic insights.
-            </p>
-            <div className="flex space-x-2">
-              <input
-                type="email"
-                placeholder="Enter your email"
-                className="flex-1 px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-              />
-              <button className="px-6 py-2 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg transition-colors">
-                Subscribe
-              </button>
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* Bottom Footer */}

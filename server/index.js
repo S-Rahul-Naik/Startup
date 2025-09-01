@@ -21,6 +21,7 @@ const adminRoutes = require('./routes/admin');
 const orderRoutes = require('./routes/orders');
 const categoryRoutes = require('./routes/categories');
 const fileRoutes = require('./routes/files');
+const contactRoutes = require('./routes/contact');
 
 // CORS configuration (MUST come before helmet to work properly)
 app.use(cors({
@@ -64,6 +65,12 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/edutech',
 .then(() => console.log('✅ MongoDB connected successfully'))
 .catch(err => console.error('❌ MongoDB connection error:', err));
 
+// Serve uploaded custom request files statically (must be before API and 404 handlers)
+const path = require('path');
+const uploadsPath = path.join(__dirname, '../uploads/custom-requests');
+console.log('Serving uploads from:', uploadsPath);
+app.use('/uploads/custom-requests', express.static(uploadsPath));
+
 // API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/projects', projectRoutes);
@@ -71,6 +78,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/files', fileRoutes);
+app.use('/api/contact', contactRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

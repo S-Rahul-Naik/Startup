@@ -688,10 +688,10 @@ const AdminDashboardPage: React.FC = () => {
 
             {/* Add/Edit Project Modal */}
             {(showAddProject || editingProject) && (
-              <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center">
-                <div className="relative mx-auto p-8 border w-full max-w-2xl shadow-2xl rounded-2xl bg-white max-h-[90vh] overflow-y-auto mt-8 scrollbar-hide">
-                  <div className="mt-3">
-                    <h3 className="text-lg font-medium text-gray-900 mb-4">
+              <div className="fixed inset-0 bg-gradient-to-br from-indigo-400 via-purple-300 to-pink-200 bg-opacity-80 overflow-y-auto h-full w-full z-50 flex items-center justify-center">
+                <div className="relative mx-auto p-[2px] w-full max-w-2xl shadow-2xl rounded-2xl bg-gradient-to-br from-indigo-400 via-purple-300 to-pink-200 max-h-[90vh] overflow-y-auto scrollbar-hide">
+                  <div className="rounded-2xl bg-white/30 backdrop-blur-md p-8">
+                    <h3 className="text-2xl font-bold text-center mb-6 text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 drop-shadow">
                       {editingProject ? 'Edit Project' : 'Add New Project'}
                     </h3>
                     <form onSubmit={(e) => {

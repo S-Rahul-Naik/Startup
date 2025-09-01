@@ -48,21 +48,21 @@ const HomePage: React.FC = () => {
 
   const testimonials = [
     {
-      name: 'Satya Jaswanth',
-      qualification: 'M.Tech(CSE) - NIT, Warangal',
+      name: 'Praveen Kumar',
+      qualification: 'B.E(CSE) - BITM, Ballari',
               text: 'Edu Tech is professional, timely, and extremely efficient.',
       rating: 5
     },
     {
-      name: 'James Smith',
-      qualification: 'M.E - Bradley University, Peoria',
+      name: 'Vaseem',
+      qualification: 'B.E(EEE) - PVKKIT, Anantapur',
       text: 'I received my kit in time which was pretty exciting. Looking forward to start working on it.',
       rating: 5
     },
     {
-      name: 'Michael Josh',
-      qualification: 'Jacksonville State University, USA',
-              text: 'I have been enriched through Edu Tech webinar which give me enough knowledge and skill to manage my project more professionally.',
+      name: 'Chetana',
+      qualification: 'B.E(DS), Ballari',
+              text: 'EduTech helped me complete my project on AI-powered Deepfake & Liveness Detection with great learning.',
       rating: 5
     }
   ];
@@ -79,8 +79,8 @@ const HomePage: React.FC = () => {
 
   return (
     <div className="min-h-screen">
-      {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-primary-700 via-primary-900 to-primary-800 text-white overflow-hidden">
+  {/* Hero Section */}
+  <section id="hero" className="relative bg-gradient-to-br from-primary-700 via-primary-900 to-primary-800 text-white overflow-hidden">
         <div className="absolute inset-0 bg-hero-pattern opacity-10"></div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 lg:py-32">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
@@ -200,6 +200,31 @@ const HomePage: React.FC = () => {
               </motion.div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* Custom Projects Section */}
+      <section className="py-20 bg-gradient-to-r from-pink-100 via-blue-100 to-orange-100">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            className="mb-10"
+          >
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+              Need a Custom Project?
+            </h2>
+            <p className="text-xl text-gray-700 max-w-2xl mx-auto mb-8">
+              Can't find exactly what you need? We build fully customized academic projects for any branch or technology. Just tell us your requirements and our expert team will deliver a solution tailored for you!
+            </p>
+            <Link
+              to="/custom-project"
+              className="inline-flex items-center justify-center px-8 py-4 bg-gradient-to-r from-secondary-500 via-pink-500 to-orange-400 hover:from-secondary-600 hover:to-orange-500 text-white font-bold rounded-full transition-all duration-300 transform hover:scale-105 shadow-xl text-lg"
+            >
+              Request a Custom Project
+            </Link>
+          </motion.div>
         </div>
       </section>
 

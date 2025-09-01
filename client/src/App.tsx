@@ -9,6 +9,7 @@ import { CartProvider } from './contexts/CartContext';
 
 // Layout Components
 import Layout from './components/layout/Layout';
+import ScrollToTop from './components/layout/ScrollToTop';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 
 // Page Components
@@ -28,6 +29,7 @@ import OrderSuccessPage from './pages/OrderSuccessPage';
 import AboutPage from './pages/AboutPage';
 import ContactPage from './pages/ContactPage';
 import NotFoundPage from './pages/NotFoundPage';
+import CustomProjectForm from './pages/CustomProjectForm';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -46,6 +48,7 @@ function App() {
       <AuthProvider>
         <CartProvider>
           <Router>
+            <ScrollToTop />
             <div className="App">
               <Layout>
                 <Routes>
@@ -55,6 +58,7 @@ function App() {
                   <Route path="/projects/:id" element={<ProjectDetailsPage />} />
                   <Route path="/about" element={<AboutPage />} />
                   <Route path="/contact" element={<ContactPage />} />
+                  <Route path="/custom-project" element={<CustomProjectForm />} />
                   <Route path="/login" element={<LoginPage />} />
                   <Route path="/register" element={<RegisterPage />} />
                   <Route path="/forgot-password" element={<ForgotPasswordPage />} />
