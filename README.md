@@ -13,20 +13,57 @@ A complete full-stack website for managing academic projects, built with modern 
 - **Email Notifications** - Automated email alerts and updates
 - **Responsive Design** - Mobile-first approach with modern UI/UX
 
+A detailed list of the main features and pages in your EduTech platform:
+
 # Startup Project
 
 A full-stack web application for project and order management, featuring user authentication, admin dashboard, file uploads, and more.
 
-## Features
-- User registration and login
-- Admin dashboard for managing users, projects, categories, and orders
-- Project CRUD operations
-- File uploads (documents, images, etc.)
-- Email notifications
+
+## 🚀 Features
+- User authentication (register, login, logout, JWT)
+- Project listing, search, filtering, and details
+- Add to cart, remove from cart, and checkout
+- Order management and order history
+- Admin dashboard (manage users, projects, orders)
+- Project creation, editing, and approval (admin & users)
+- File upload and download for projects
+- Email notifications (e.g., order confirmation)
+- Payment integration (Stripe)
+- User profile management
+- Responsive design (mobile & desktop)
+- Protected routes (for authenticated users/admin)
+- Toast notifications and UI animations
+- Security: rate limiting, input validation, CORS, helmet
+
+## 📄 Pages
+- Home page
+- Projects listing page
+- Project detail page
+- Cart page
+- Checkout page
+- Order success page
+- Login page
+- Register page
+- Profile page
+- Admin dashboard page
+- About page
+- Contact page
+- Not found (404) page
 
 ## Tech Stack
 - **Frontend**: React, TypeScript, Tailwind CSS
 - **Backend**: Node.js, Express, MongoDB, Mongoose
+
+
+## 🛡️ Admin Login Details
+
+To access the admin dashboard, use the following credentials:
+
+```
+Admin Email: admin@takeoffprojects.com
+Admin Password: admin123
+```
 
 ## Getting Started
 
