@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0ea5e9" />
+    <meta
+      name="description"
+      content="Edu Tech - Your Gateway to Academic Excellence. Discover cutting-edge academic projects, expert mentorship, and comprehensive support to accelerate your learning journey."
+    />
+    <meta name="keywords" content="Edu Tech, academic projects, engineering projects, embedded systems, machine learning, IoT, VLSI, Python, Android, academic excellence, student projects" />
+    <meta name="author" content="Edu Tech - Sugali Rahul Naik" />
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://edutech.com/" />
+    <meta property="og:title" content="Edu Tech - Academic Project Management Platform" />
+    <meta property="og:description" content="Your Gateway to Academic Excellence. Discover cutting-edge academic projects, expert mentorship, and comprehensive support." />
+    <meta property="og:image" content="%PUBLIC_URL%/og-image.jpg" />
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content="https://edutech.com/" />
+    <meta property="twitter:title" content="Edu Tech - Academic Project Management Platform" />
+    <meta property="twitter:description" content="Your Gateway to Academic Excellence. Discover cutting-edge academic projects, expert mentorship, and comprehensive support." />
+    <meta property="twitter:image" content="%PUBLIC_URL%/og-image.jpg" />
+
+    <!-- Preconnect to external domains -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    
+    <!-- Favicon -->
+    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+    
+    <!-- Title -->
+    <title>Edu Tech - Academic Project Management Platform</title>
+    
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "Edu Tech",
+      "url": "https://edutech.com",
+      "logo": "https://edutech.com/logo.png",
+      "description": "Your Gateway to Academic Excellence. Discover cutting-edge academic projects, expert mentorship, and comprehensive support.",
+      "founder": "Sugali Rahul Naik",
+      "address": {
+        "@type": "PostalAddress",
+        "addressCountry": "IN"
+      },
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "telephone": "+91-7672039975",
+        "contactType": "customer service",
+        "email": "edutech956@gmail.com"
+      }
+    }
+    </script>
+  </head>
+  <body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="root"></div>
+    
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="fixed inset-0 bg-white z-50 flex items-center justify-center">
+      <div class="text-center">
+        <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-primary-600 mx-auto mb-4"></div>
+        <h2 class="text-xl font-semibold text-gray-700">Loading Edu Tech...</h2>
+        <p class="text-gray-500 mt-2">Please wait while we prepare your experience</p>
+      </div>
+    </div>
+
+    <script>
+      // Hide loading screen when React app is ready
+      window.addEventListener('load', function() {
+        const loadingScreen = document.getElementById('loading-screen');
+        if (loadingScreen) {
+          loadingScreen.style.opacity = '0';
+          setTimeout(() => {
+            loadingScreen.style.display = 'none';
+          }, 300);
+        }
+      });
+    </script>
+  </body>
+</html>
