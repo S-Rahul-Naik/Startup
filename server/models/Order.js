@@ -28,7 +28,7 @@ const orderSchema = new mongoose.Schema({
   paymentMethod: {
     type: String,
     required: [true, 'Payment method is required'],
-    enum: ['credit_card', 'debit_card', 'paypal', 'stripe', 'bank_transfer', 'crypto', 'upi']
+    enum: ['upi']
   },
   paymentStatus: {
     type: String,
@@ -41,52 +41,23 @@ const orderSchema = new mongoose.Schema({
     default: 'pending'
   },
   billingAddress: {
-    firstName: {
-      type: String,
-      trim: true,
-      maxlength: [50, 'First name cannot exceed 50 characters']
-    },
-    lastName: {
-      type: String,
-      trim: true,
-      maxlength: [50, 'Last name cannot exceed 50 characters']
-    },
-    email: {
-      type: String,
-      trim: true,
-      lowercase: true,
-      maxlength: [100, 'Email cannot exceed 100 characters']
-    },
-    phone: {
-      type: String,
-      trim: true,
-      maxlength: [20, 'Phone cannot exceed 20 characters']
-    },
-    address: {
-      type: String,
-      trim: true,
-      maxlength: [200, 'Address cannot exceed 200 characters']
-    },
-    city: {
-      type: String,
-      trim: true,
-      maxlength: [100, 'City cannot exceed 100 characters']
-    },
-    state: {
-      type: String,
-      trim: true,
-      maxlength: [100, 'State cannot exceed 100 characters']
-    },
-    zipCode: {
-      type: String,
-      trim: true,
-      maxlength: [20, 'Zip code cannot exceed 20 characters']
-    },
-    country: {
-      type: String,
-      trim: true,
-      maxlength: [100, 'Country cannot exceed 100 characters']
-    }
+    name: { type: String, trim: true, maxlength: 100 },
+    email: { type: String, trim: true, lowercase: true, maxlength: 100 },
+    phone: { type: String, trim: true, maxlength: 20 },
+    street: { type: String, trim: true, maxlength: 200 },
+    city: { type: String, trim: true, maxlength: 100 },
+    district: { type: String, trim: true, maxlength: 100 },
+    state: { type: String, trim: true, maxlength: 100 },
+    zip: { type: String, trim: true, maxlength: 20 },
+    country: { type: String, trim: true, maxlength: 100 }
+  },
+  receipt: {
+    type: String,
+    trim: true
+  },
+  receiptOriginalName: {
+    type: String,
+    trim: true
   },
   paymentDetails: {
     transactionId: {
