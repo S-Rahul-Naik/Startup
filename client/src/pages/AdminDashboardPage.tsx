@@ -14,10 +14,11 @@ import {
   CheckCircleIcon,
   XCircleIcon,
   MagnifyingGlassIcon,
-  EyeIcon
+  EyeIcon,
+  CreditCardIcon
 } from '@heroicons/react/24/outline';
 // ...existing code...
-import axios from 'axios';
+// ...existing code...
 
 interface DashboardStats {
   totalUsers: number;
@@ -72,8 +73,69 @@ interface Order {
   createdAt: string;
 }
 
+
+
 const AdminDashboardPage: React.FC = () => {
+  // All state and handlers go here
+  const [activeTab, setActiveTab] = useState('overview');
+  const [upiId, setUpiId] = useState('');
+  const [upiLoading, setUpiLoading] = useState(false);
+  const [upiEdit, setUpiEdit] = useState('');
+  // ...all other state and handlers...
+
+  useEffect(() => {
+    if (activeTab === 'payments') {
+      setUpiLoading(true);
+      fetch('http://localhost:5001/api/upi')
+        .then(res => res.json())
+        .then(data => {
+          setUpiId(data.upiId || '');
+          setUpiEdit(data.upiId || '');
+        })
+        .finally(() => setUpiLoading(false));
+    }
+  }, [activeTab]);
+
+  // Ensure overview is default when landing on /admin
+  useEffect(() => {
+    if (window.location.pathname === '/admin') {
+      setActiveTab('overview');
+    }
+  }, []);
+
+  const handleSaveUpiId = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setUpiLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('http://localhost:5001/api/upi', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ upiId: upiEdit })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setUpiId(data.upiId);
+        // toast.success('UPI ID updated!');
+      } else {
+        // toast.error('Failed to update UPI ID');
+      }
+    } catch (err) {
+      // toast.error('Failed to update UPI ID');
+    } finally {
+      setUpiLoading(false);
+    }
+  };
+
+  // ...other handlers and logic...
+
   // ...existing code...
+// Removed stray closing brace and semicolon here
+
+
 
   const handleEditProject = (projectId: string) => {
     // Find the project and set it for editing
@@ -99,7 +161,7 @@ const AdminDashboardPage: React.FC = () => {
   const navigate = useNavigate();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('overview');
+  // Removed duplicate activeTab declaration
   // ...existing code...
   
   // Project Management State
@@ -125,7 +187,7 @@ const AdminDashboardPage: React.FC = () => {
 
   // Order Management State
   const [orders, setOrders] = useState<Order[]>([]);
-
+  
   // Settings State
   const [settings, setSettings] = useState({
             siteName: 'Edu Tech',
@@ -464,6 +526,7 @@ const AdminDashboardPage: React.FC = () => {
               { id: 'projects', name: 'Projects', icon: FolderIcon },
               { id: 'users', name: 'Users', icon: UsersIcon },
               { id: 'orders', name: 'Orders', icon: ShoppingCartIcon },
+              { id: 'payments', name: 'Payments', icon: CreditCardIcon },
               { id: 'settings', name: 'Settings', icon: CogIcon }
             ].map((tab) => (
               <button
@@ -482,6 +545,38 @@ const AdminDashboardPage: React.FC = () => {
           </div>
         </div>
       </nav>
+
+      {/* ...existing code... */}
+
+      {/* Payments Tab Panel */}
+      {activeTab === 'payments' && (
+        <div className="space-y-6">
+          <div className="bg-white shadow rounded-lg p-6">
+            <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">UPI Payment Settings</h3>
+            <form onSubmit={handleSaveUpiId} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Current UPI ID</label>
+                <input
+                  type="text"
+                  value={upiEdit}
+                  onChange={e => setUpiEdit(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  placeholder="Enter UPI ID"
+                  disabled={upiLoading}
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={upiLoading}
+                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium"
+              >
+                {upiLoading ? 'Saving...' : 'Save UPI ID'}
+              </button>
+              <div className="text-xs text-gray-500 mt-2">This UPI ID will be shown to users on the checkout page.</div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
@@ -1248,8 +1343,9 @@ const AdminDashboardPage: React.FC = () => {
            {/* ...existing code... */}
         </div>
       </main>
+
     </div>
   );
-};
+}
 
 export default AdminDashboardPage;

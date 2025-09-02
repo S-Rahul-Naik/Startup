@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
-  CreditCardIcon,
   LockClosedIcon,
   CheckCircleIcon,
   ShieldCheckIcon,
@@ -17,86 +16,97 @@ const CheckoutPage: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [isProcessing, setIsProcessing] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState('card');
-
-  const [formData, setFormData] = useState({
-    cardNumber: '',
-    expiryDate: '',
-    cvv: '',
-    cardholderName: '',
-    billingAddress: {
-      street: '',
-      city: '',
-      state: '',
-      zipCode: '',
-      country: 'India'
-    }
+  const [upiId, setUpiId] = useState('');
+  const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const [addressFields, setAddressFields] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    street: '',
+    city: '',
+    district: '',
+    state: '',
+    zip: '',
+    country: 'India',
   });
 
-  const handleInputChange = (field: string, value: string) => {
-    if (field.includes('.')) {
-      const [parent, child] = field.split('.');
-      setFormData(prev => ({
-        ...prev,
-        [parent]: {
-          ...(prev[parent as keyof typeof prev] as any),
-          [child]: value
-        }
-      }));
-    } else {
-      setFormData(prev => ({
-        ...prev,
-        [field]: value
-      }));
+  React.useEffect(() => {
+    // Fetch UPI ID from backend
+    fetch('http://localhost:5001/api/upi')
+      .then(res => res.json())
+      .then(data => setUpiId(data.upiId || ''));
+  }, []);
+
+  const handleAddressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setAddressFields(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleReceiptChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setReceiptFile(e.target.files[0]);
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!user) {
       toast.error('Please login to continue');
       navigate('/login');
       return;
     }
-
+    if (!receiptFile) {
+      toast.error('Please upload your payment receipt.');
+      return;
+    }
+    // Validate all address fields
+    if (!addressFields.name || addressFields.name.trim() === '') {
+      toast.error('Please enter your full name.');
+      return;
+    }
+    for (const key of Object.keys(addressFields)) {
+      if (!addressFields[key as keyof typeof addressFields] || addressFields[key as keyof typeof addressFields].trim() === '') {
+        toast.error('Please fill all address fields.');
+        return;
+      }
+    }
     setIsProcessing(true);
-
     try {
-      // Simulate payment processing
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      // Create an order for each project in the cart
       const token = localStorage.getItem('token');
       for (const item of cartItems) {
+        const formData = new FormData();
+        formData.append('projectId', item._id);
+        formData.append('paymentMethod', 'upi');
+        Object.entries(addressFields).forEach(([key, value]) => {
+          formData.append(key, value);
+        });
+        formData.append('receipt', receiptFile);
+        // Debug: log FormData keys/values
+        Array.from(formData.entries()).forEach(pair => {
+          console.log(pair[0] + ': ' + pair[1]);
+        });
         const response = await fetch('http://localhost:5001/api/orders', {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
           },
-          body: JSON.stringify({
-            projectId: item._id,
-            paymentMethod: paymentMethod === 'card' ? 'credit_card' : paymentMethod,
-            billingAddress: {
-              street: formData.billingAddress.street,
-              city: formData.billingAddress.city,
-              state: formData.billingAddress.state,
-              zipCode: formData.billingAddress.zipCode,
-              country: formData.billingAddress.country
-            }
-          })
+          body: formData
         });
         if (!response.ok) {
-          throw new Error('Order creation failed');
+          let errorMsg = 'Order creation failed';
+          try {
+            const errorData = await response.json();
+            if (errorData && errorData.message) errorMsg = errorData.message;
+          } catch {}
+          throw new Error(errorMsg);
         }
       }
-
       toast.success('Payment successful! Your order has been placed.');
       clearCart();
       navigate('/order-success');
-    } catch (error) {
-      toast.error('Payment failed. Please try again.');
+    } catch (error: any) {
+      toast.error(error?.message || 'Payment failed. Please try again.');
+      console.error('Payment error:', error);
     } finally {
       setIsProcessing(false);
     }
@@ -136,7 +146,6 @@ const CheckoutPage: React.FC = () => {
           <h1 className="text-3xl font-bold text-gray-900">Checkout</h1>
           <p className="text-gray-600 mt-2">Complete your purchase securely</p>
         </div>
-
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Payment Form */}
           <div className="lg:col-span-1">
@@ -146,202 +155,144 @@ const CheckoutPage: React.FC = () => {
               transition={{ duration: 0.5 }}
             >
               <div className="bg-white rounded-lg shadow-soft p-6">
-                <div className="flex items-center mb-6">
-                  <CreditCardIcon className="w-6 h-6 text-primary-600 mr-2" />
-                  <h2 className="text-xl font-semibold text-gray-900">Payment Information</h2>
+                <div className="mb-6">
+                  <h2 className="text-xl font-semibold text-gray-900">UPI Payment Only</h2>
                 </div>
-
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  {/* Payment Method Selection */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-3">
-                      Payment Method
-                    </label>
-                    <div className="space-y-3">
-                      <label className="flex items-center">
-                        <input
-                          type="radio"
-                          name="paymentMethod"
-                          value="card"
-                          checked={paymentMethod === 'card'}
-                          onChange={(e) => setPaymentMethod(e.target.value)}
-                          className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300"
-                        />
-                        <span className="ml-3 text-sm text-gray-700">Credit/Debit Card</span>
-                      </label>
-                      <label className="flex items-center">
-                        <input
-                          type="radio"
-                          name="paymentMethod"
-                          value="upi"
-                          checked={paymentMethod === 'upi'}
-                          onChange={(e) => setPaymentMethod(e.target.value)}
-                          className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300"
-                        />
-                        <span className="ml-3 text-sm text-gray-700">UPI</span>
-                      </label>
-                    </div>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Current UPI ID (Pay to this ID):</label>
+                  <div className="bg-gray-100 px-4 py-2 rounded text-lg font-mono text-primary-700 select-all">
+                    {upiId || 'Loading...'}
                   </div>
-
-                  {paymentMethod === 'card' && (
-                    <>
-                      {/* Card Number */}
-                      <div>
-                        <label htmlFor="cardNumber" className="block text-sm font-medium text-gray-700 mb-2">
-                          Card Number
-                        </label>
-                        <input
-                          type="text"
-                          id="cardNumber"
-                          value={formData.cardNumber}
-                          onChange={(e) => handleInputChange('cardNumber', e.target.value)}
-                          placeholder="1234 5678 9012 3456"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                          required
-                        />
-                      </div>
-
-                      {/* Card Details Row */}
-                      <div className="grid grid-cols-3 gap-4">
-                        <div>
-                          <label htmlFor="expiryDate" className="block text-sm font-medium text-gray-700 mb-2">
-                            Expiry Date
-                          </label>
-                          <input
-                            type="text"
-                            id="expiryDate"
-                            value={formData.expiryDate}
-                            onChange={(e) => handleInputChange('expiryDate', e.target.value)}
-                            placeholder="MM/YY"
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                            required
-                          />
-                        </div>
-                        <div>
-                          <label htmlFor="cvv" className="block text-sm font-medium text-gray-700 mb-2">
-                            CVV
-                          </label>
-                          <input
-                            type="text"
-                            id="cvv"
-                            value={formData.cvv}
-                            onChange={(e) => handleInputChange('cvv', e.target.value)}
-                            placeholder="123"
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                            required
-                          />
-                        </div>
-                        <div>
-                          <label htmlFor="cardholderName" className="block text-sm font-medium text-gray-700 mb-2">
-                            Cardholder Name
-                          </label>
-                          <input
-                            type="text"
-                            id="cardholderName"
-                            value={formData.cardholderName}
-                            onChange={(e) => handleInputChange('cardholderName', e.target.value)}
-                            placeholder="John Doe"
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                            required
-                          />
-                        </div>
-                      </div>
-                    </>
-                  )}
-
-                  {paymentMethod === 'upi' && (
-                    <div>
-                      <label htmlFor="upiId" className="block text-sm font-medium text-gray-700 mb-2">
-                        UPI ID
-                      </label>
-                      <input
-                        type="text"
-                        id="upiId"
-                        placeholder="username@upi"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                        required
-                      />
-                    </div>
-                  )}
-
-                  {/* Billing Address */}
+                  <p className="text-xs text-gray-500 mt-1">Please pay using your UPI app and upload the payment receipt below.</p>
+                </div>
+                <form onSubmit={handleSubmit} className="space-y-6">
                   <div>
-                    <h3 className="text-lg font-medium text-gray-900 mb-4">Billing Address</h3>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Upload Payment Receipt (screenshot or PDF)</label>
+                    <input
+                      type="file"
+                      accept="image/*,application/pdf"
+                      onChange={handleReceiptChange}
+                      required
+                      className="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"
+                    />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-900 mb-4">Delivery Address Details</h3>
                     <div className="space-y-4">
                       <div>
-                        <label htmlFor="street" className="block text-sm font-medium text-gray-700 mb-2">
-                          Street Address
-                        </label>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
                         <input
                           type="text"
-                          id="street"
-                          value={formData.billingAddress.street}
-                          onChange={(e) => handleInputChange('billingAddress.street', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                          name="name"
+                          value={addressFields.name}
+                          onChange={handleAddressChange}
                           required
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                          placeholder="Your Name"
                         />
                       </div>
-                      
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <label htmlFor="city" className="block text-sm font-medium text-gray-700 mb-2">
-                            City
-                          </label>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
                           <input
-                            type="text"
-                            id="city"
-                            value={formData.billingAddress.city}
-                            onChange={(e) => handleInputChange('billingAddress.city', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                            type="email"
+                            name="email"
+                            value={addressFields.email}
+                            onChange={handleAddressChange}
                             required
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                            placeholder="you@email.com"
                           />
                         </div>
                         <div>
-                          <label htmlFor="state" className="block text-sm font-medium text-gray-700 mb-2">
-                            State
-                          </label>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
                           <input
-                            type="text"
-                            id="state"
-                            value={formData.billingAddress.state}
-                            onChange={(e) => handleInputChange('billingAddress.state', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                            type="tel"
+                            name="phone"
+                            value={addressFields.phone}
+                            onChange={handleAddressChange}
                             required
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                            placeholder="10-digit mobile number"
                           />
                         </div>
                       </div>
-
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Street Address</label>
+                        <input
+                          type="text"
+                          name="street"
+                          value={addressFields.street}
+                          onChange={handleAddressChange}
+                          required
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                          placeholder="Street, Area, Landmark"
+                        />
+                      </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <label htmlFor="zipCode" className="block text-sm font-medium text-gray-700 mb-2">
-                            ZIP Code
-                          </label>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">City</label>
                           <input
                             type="text"
-                            id="zipCode"
-                            value={formData.billingAddress.zipCode}
-                            onChange={(e) => handleInputChange('billingAddress.zipCode', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                            name="city"
+                            value={addressFields.city}
+                            onChange={handleAddressChange}
                             required
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                            placeholder="City"
                           />
                         </div>
                         <div>
-                          <label htmlFor="country" className="block text-sm font-medium text-gray-700 mb-2">
-                            Country
-                          </label>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">District</label>
                           <input
                             type="text"
-                            id="country"
-                            value={formData.billingAddress.country}
-                            disabled
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500"
+                            name="district"
+                            value={addressFields.district}
+                            onChange={handleAddressChange}
+                            required
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                            placeholder="District"
                           />
                         </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">State</label>
+                          <input
+                            type="text"
+                            name="state"
+                            value={addressFields.state}
+                            onChange={handleAddressChange}
+                            required
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                            placeholder="State"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">ZIP Code</label>
+                          <input
+                            type="text"
+                            name="zip"
+                            value={addressFields.zip}
+                            onChange={handleAddressChange}
+                            required
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                            placeholder="PIN/ZIP Code"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Country</label>
+                        <input
+                          type="text"
+                          name="country"
+                          value={addressFields.country}
+                          disabled
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500"
+                        />
                       </div>
                     </div>
                   </div>
-
-                  {/* Submit Button */}
                   <button
                     type="submit"
                     disabled={isProcessing}
@@ -355,13 +306,11 @@ const CheckoutPage: React.FC = () => {
                     ) : (
                       <div className="flex items-center justify-center">
                         <LockClosedIcon className="w-5 h-5 mr-2" />
-                        Pay {formatPrice(total)}
+                        Pay {formatPrice(total * 1.18)}
                       </div>
                     )}
                   </button>
                 </form>
-
-                {/* Security Notice */}
                 <div className="mt-6 pt-6 border-t border-gray-200">
                   <div className="flex items-center text-sm text-gray-600">
                     <ShieldCheckIcon className="w-4 h-4 text-green-500 mr-2" />
@@ -371,7 +320,6 @@ const CheckoutPage: React.FC = () => {
               </div>
             </motion.div>
           </div>
-
           {/* Order Summary */}
           <div className="lg:col-span-1">
             <motion.div
@@ -381,8 +329,6 @@ const CheckoutPage: React.FC = () => {
             >
               <div className="bg-white rounded-lg shadow-soft p-6 sticky top-8">
                 <h2 className="text-xl font-semibold text-gray-900 mb-6">Order Summary</h2>
-                
-                {/* Cart Items */}
                 <div className="space-y-4 mb-6">
                   {cartItems.map((item) => (
                     <div key={item._id} className="flex items-center space-x-3">
@@ -404,8 +350,6 @@ const CheckoutPage: React.FC = () => {
                     </div>
                   ))}
                 </div>
-
-                {/* Price Breakdown */}
                 <div className="border-t border-gray-200 pt-4 space-y-3">
                   <div className="flex justify-between text-sm text-gray-600">
                     <span>Subtotal</span>
@@ -422,8 +366,6 @@ const CheckoutPage: React.FC = () => {
                     </div>
                   </div>
                 </div>
-
-                {/* Features */}
                 <div className="mt-6 space-y-3">
                   <div className="flex items-center text-sm text-gray-600">
                     <TruckIcon className="w-4 h-4 text-blue-500 mr-2" />

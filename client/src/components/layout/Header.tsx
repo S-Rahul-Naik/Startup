@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -15,6 +15,25 @@ import { useCart } from '../../contexts/CartContext';
 const Header: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [userMenuClicked, setUserMenuClicked] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+  // Close dropdown on outside click
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setIsUserMenuOpen(false);
+        setUserMenuClicked(false);
+      }
+    }
+    if (isUserMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    } else {
+      document.removeEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isUserMenuOpen]);
   const location = useLocation();
   const { user, logout } = useAuth();
   const { items: cartItems } = useCart();
@@ -125,10 +144,17 @@ const Header: React.FC = () => {
 
             {/* User Menu */}
             {user ? (
-              <div className="relative">
+              <div
+                className="relative"
+                ref={userMenuRef}
+                onMouseEnter={() => { setIsUserMenuOpen(true); }}
+                onMouseLeave={() => { if (!userMenuClicked) setIsUserMenuOpen(false); }}
+              >
                 <button
-                  onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                  onClick={() => { setIsUserMenuOpen(true); setUserMenuClicked(!userMenuClicked); }}
                   className="flex items-center space-x-2 p-2 rounded-md text-gray-700 hover:text-primary-600 hover:bg-primary-50 transition-colors"
+                  aria-haspopup="true"
+                  aria-expanded={isUserMenuOpen}
                 >
                   {user.avatar ? (
                     <img
@@ -159,14 +185,14 @@ const Header: React.FC = () => {
                       <Link
                         to="/dashboard"
                         className="block px-4 py-2 text-sm text-gray-700 hover:text-primary-600 hover:bg-primary-50 transition-colors"
-                        onClick={() => setIsUserMenuOpen(false)}
+                        onClick={() => { setIsUserMenuOpen(false); setUserMenuClicked(false); }}
                       >
                         Dashboard
                       </Link>
                       <Link
                         to="/profile"
                         className="block px-4 py-2 text-sm text-gray-700 hover:text-primary-600 hover:bg-primary-50 transition-colors"
-                        onClick={() => setIsUserMenuOpen(false)}
+                        onClick={() => { setIsUserMenuOpen(false); setUserMenuClicked(false); }}
                       >
                         Profile
                       </Link>
@@ -174,13 +200,13 @@ const Header: React.FC = () => {
                         <Link
                           to="/admin"
                           className="block px-4 py-2 text-sm text-gray-700 hover:text-primary-600 hover:bg-primary-50 transition-colors border-t border-gray-100"
-                          onClick={() => setIsUserMenuOpen(false)}
+                          onClick={() => { setIsUserMenuOpen(false); setUserMenuClicked(false); }}
                         >
                           Admin Dashboard
                         </Link>
                       )}
                       <button
-                        onClick={handleLogout}
+                        onClick={() => { handleLogout(); setUserMenuClicked(false); }}
                         className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:text-red-600 hover:bg-red-50 transition-colors"
                       >
                         Logout
