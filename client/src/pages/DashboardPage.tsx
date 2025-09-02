@@ -10,8 +10,10 @@ import {
   EyeIcon,
   ArrowDownTrayIcon
 } from '@heroicons/react/24/outline';
+
 import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
+import { useNavigate } from 'react-router-dom';
 
 const DashboardPage: React.FC = () => {
   const { user } = useAuth();
@@ -20,6 +22,7 @@ const DashboardPage: React.FC = () => {
   const [orders, setOrders] = useState<any[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(false);
   const [ordersError, setOrdersError] = useState<string | null>(null);
+  const navigate = useNavigate();
   // Fetch user orders on mount
   useEffect(() => {
     if (!user) return;
@@ -51,7 +54,7 @@ const DashboardPage: React.FC = () => {
 
   // Calculate stats
   const totalOrders = orders.length;
-  const completedOrders = orders.filter((o) => o.status === 'completed').length;
+  const completedOrders = orders.filter((o) => o.status === 'completed' || o.status === 'delivered').length;
   const inProgressOrders = orders.filter((o) => o.status === 'pending' || o.status === 'processing').length;
 
   const renderOverview = () => (
@@ -155,8 +158,10 @@ const DashboardPage: React.FC = () => {
                   </div>
                 </div>
                 <div className="flex justify-end space-x-3">
-                  {/* Placeholder for actions, e.g., view/download */}
-                  <button className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">
+                  <button
+                    className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                    onClick={() => navigate(`/dashboard/orders/${order._id}`)}
+                  >
                     <EyeIcon className="w-4 h-4 mr-2 inline" />
                     View Details
                   </button>

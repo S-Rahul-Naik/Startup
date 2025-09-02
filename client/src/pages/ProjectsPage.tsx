@@ -7,8 +7,7 @@ import {
   AdjustmentsHorizontalIcon,
   StarIcon,
   EyeIcon,
-  ShoppingCartIcon,
-  HeartIcon
+  ShoppingCartIcon
 } from '@heroicons/react/24/outline';
 import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid';
 import { useCart } from '../contexts/CartContext';
@@ -490,6 +489,7 @@ const ProjectsPage: React.FC = () => {
               >
                 {/* Project Image */}
                 <div className="relative bg-gray-200 overflow-hidden flex items-center justify-center" style={{ aspectRatio: '3/2' }}>
+                  {/* Reduce image height for a more compact card */}
                   {(() => {
                     // Debug: Log project data
                     console.log('Project:', project.title, 'Files:', project.files);
@@ -507,7 +507,7 @@ const ProjectsPage: React.FC = () => {
                         <img
                           src={`http://localhost:5001/api/projects/files/${imageFiles[0].filename}`}
                           alt={project.title}
-                          className="w-full h-full object-cover object-center"
+                          className="absolute inset-0 w-full h-full object-cover object-center"
                           onError={(e) => {
                             // Fallback to placeholder if image fails to load
                             e.currentTarget.style.display = 'none';
@@ -520,12 +520,12 @@ const ProjectsPage: React.FC = () => {
                         <img
                           src={project.images[0]}
                           alt={project.title}
-                          className="w-full h-full object-cover object-center"
+                          className="absolute inset-0 w-full h-full object-cover object-center"
                         />
                       );
                                          } else {
                        return (
-                         <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 bg-gradient-to-br from-gray-100 to-gray-200">
+                         <div className="absolute inset-0 w-full h-full flex flex-col items-center justify-center text-gray-400 bg-gradient-to-br from-gray-100 to-gray-200">
                            <svg className="w-16 h-16 mb-2 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                            </svg>
@@ -536,7 +536,7 @@ const ProjectsPage: React.FC = () => {
                      }
                   })()}
                                      {/* Fallback placeholder (hidden by default) */}
-                   <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 bg-gradient-to-br from-gray-100 to-gray-200 hidden">
+                   <div className="absolute inset-0 w-full h-full flex-col items-center justify-center text-gray-400 bg-gradient-to-br from-gray-100 to-gray-200 hidden">
                      <svg className="w-16 h-16 mb-2 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                      </svg>
@@ -548,13 +548,11 @@ const ProjectsPage: React.FC = () => {
                       -{project.discount}%
                     </div>
                   )}
-                  <button className="absolute top-2 right-2 p-2 bg-white rounded-full shadow-md hover:bg-gray-50 transition-colors">
-                    <HeartIcon className="w-5 h-5 text-gray-600" />
-                  </button>
+                  {/* Removed Heart Icon */}
                 </div>
 
                 {/* Project Content */}
-                <div className="p-6">
+                <div className="p-4" style={{ minHeight: 0 }}>
                   {/* Category and Domain */}
                   <div className="flex items-center gap-2 mb-3">
                     <span className="inline-block text-xs font-semibold text-primary-700 bg-primary-100 px-3 py-1 rounded-full shadow-sm border border-primary-200">
@@ -577,25 +575,9 @@ const ProjectsPage: React.FC = () => {
                     {project.shortDescription || project.description.substring(0, 100) + '...'}
                   </p>
 
-                                     {/* Rating and Stats */}
-                   <div className="flex items-center justify-between mb-4">
-                     <div className="flex items-center">
-                       <div className="flex mr-2">
-                         {renderStars(typeof project.rating === 'object' ? project.rating.average || 4.5 : project.rating || 4.5)}
-                       </div>
-                       <span className="text-sm text-gray-600">
-                         {typeof project.rating === 'object' ? project.rating.average || 4.5 : project.rating || 4.5} ({typeof project.rating === 'object' ? project.rating.count || 0 : project.reviewCount || 0})
-                       </span>
-                     </div>
-                     <div className="flex items-center text-sm text-gray-500">
-                       <EyeIcon className="w-4 h-4 mr-1" />
-                       {project.views || 0}
-                     </div>
-                   </div>
-
-                  {/* Price */}
+                  {/* Card Header: Price (left) and Stars (right) */}
                   <div className="flex items-center justify-between mb-4">
-                    <div>
+                    <div className="flex items-center">
                       <span className="text-2xl font-bold text-gray-900">
                         {formatPrice(project.price)}
                       </span>
@@ -605,13 +587,18 @@ const ProjectsPage: React.FC = () => {
                         </span>
                       )}
                     </div>
-                    <span className="text-sm text-gray-500">
-                      {project.orders || 0} orders
-                    </span>
+                    <div className="flex items-center">
+                      <div className="flex mr-2">
+                        {renderStars(typeof project.rating === 'object' ? project.rating.average || 4.5 : project.rating || 4.5)}
+                      </div>
+                      <span className="text-sm text-gray-600">
+                        {typeof project.rating === 'object' ? project.rating.average || 4.5 : project.rating || 4.5} ({typeof project.rating === 'object' ? project.rating.count || 0 : project.reviewCount || 0})
+                      </span>
+                    </div>
                   </div>
 
                   {/* Action Buttons */}
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 w-full mb-2">
                     <button
                       onClick={() => handleAddToCart(project)}
                       disabled={isInCart(project._id)}
@@ -624,12 +611,12 @@ const ProjectsPage: React.FC = () => {
                       <ShoppingCartIcon className="w-4 h-4 mr-2" />
                       {isInCart(project._id) ? 'In Cart' : 'Add to Cart'}
                     </button>
-                                         <button 
-                       onClick={() => navigate(`/projects/${project._id}`)}
-                       className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
-                     >
-                       View Details
-                     </button>
+                    <button 
+                      onClick={() => navigate(`/projects/${project._id}`)}
+                      className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                    >
+                      View Details
+                    </button>
                   </div>
                 </div>
               </motion.div>

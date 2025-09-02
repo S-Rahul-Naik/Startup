@@ -37,7 +37,7 @@ const orderSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['pending', 'processing', 'completed', 'cancelled', 'refunded'],
+    enum: ['pending', 'paid', 'processing', 'delivered', 'completed', 'cancelled', 'refunded'],
     default: 'pending'
   },
   billingAddress: {
@@ -60,6 +60,13 @@ const orderSchema = new mongoose.Schema({
     trim: true
   },
   paymentDetails: {
+  statusHistory: [
+    {
+      status: { type: String, required: true },
+      updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+      updatedAt: { type: Date, default: Date.now }
+    }
+  ],
     transactionId: {
       type: String,
       trim: true

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -98,8 +99,15 @@ const AdminDashboardPage: React.FC = () => {
 
   // Ensure overview is default when landing on /admin
   useEffect(() => {
-    if (window.location.pathname === '/admin') {
+    const params = new URLSearchParams(window.location.search);
+    const tabParam = params.get('tab');
+    if (window.location.pathname === '/admin' && !tabParam) {
       setActiveTab('overview');
+    } else if (window.location.pathname === '/admin' && tabParam) {
+      setActiveTab(tabParam);
+      if (tabParam === 'orders') fetchOrders();
+      if (tabParam === 'projects') fetchProjects();
+      if (tabParam === 'users') fetchUsers();
     }
   }, []);
 
@@ -451,7 +459,7 @@ const AdminDashboardPage: React.FC = () => {
   const handleUpdateOrderStatus = async (orderId: string, newStatus: string) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/admin/orders/${orderId}/status`, {
+  const response = await fetch(`http://localhost:5001/api/orders/${orderId}/status`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -479,9 +487,9 @@ const AdminDashboardPage: React.FC = () => {
     }
   };
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
+  const handleLogout = async () => {
+    await logout();
+    window.location.href = '/';
   };
 
   if (loading) {
@@ -550,29 +558,31 @@ const AdminDashboardPage: React.FC = () => {
 
       {/* Payments Tab Panel */}
       {activeTab === 'payments' && (
-        <div className="space-y-6">
-          <div className="bg-white shadow rounded-lg p-6">
-            <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">UPI Payment Settings</h3>
-            <form onSubmit={handleSaveUpiId} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Current UPI ID</label>
+        <div className="flex justify-center items-center min-h-[40vh] px-2">
+          <div className="bg-white shadow rounded-lg w-full max-w-lg p-4 sm:p-6 md:p-8">
+            <h3 className="text-xl md:text-2xl font-semibold text-center text-gray-900 mb-6">UPI Payment Settings</h3>
+            <form onSubmit={handleSaveUpiId} className="flex flex-col gap-4">
+              <div className="flex flex-col gap-2">
+                <label className="block text-base font-medium text-gray-700" htmlFor="upi-id-input">Current UPI ID</label>
                 <input
+                  id="upi-id-input"
                   type="text"
                   value={upiEdit}
                   onChange={e => setUpiEdit(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base"
                   placeholder="Enter UPI ID"
                   disabled={upiLoading}
+                  autoComplete="off"
                 />
               </div>
               <button
                 type="submit"
                 disabled={upiLoading}
-                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium"
+                className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md text-base font-semibold shadow transition-colors duration-200 w-full md:w-auto self-center"
               >
                 {upiLoading ? 'Saving...' : 'Save UPI ID'}
               </button>
-              <div className="text-xs text-gray-500 mt-2">This UPI ID will be shown to users on the checkout page.</div>
+              <div className="text-xs text-gray-500 text-center mt-2">This UPI ID will be shown to users on the checkout page.</div>
             </form>
           </div>
         </div>
@@ -1215,55 +1225,91 @@ const AdminDashboardPage: React.FC = () => {
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Project</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order ID</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Project</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment Mode</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {orders.map((order) => (
-                      <tr key={order._id}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          #{order._id.slice(-6)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">
-                            {order.user?.firstName} {order.user?.lastName}
-                          </div>
-                          <div className="text-sm text-gray-500">{order.user?.email}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {order.project?.title}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          ${order.amount}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            order.status === 'completed' ? 'bg-green-100 text-green-800' :
-                            order.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                            'bg-gray-100 text-gray-800'
-                          }`}>
-                            {order.status}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <select
-                            value={order.status}
-                            onChange={(e) => handleUpdateOrderStatus(order._id, e.target.value)}
-                            className="text-sm border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                          >
-                            <option value="pending">Pending</option>
-                            <option value="processing">Processing</option>
-                            <option value="completed">Completed</option>
-                            <option value="cancelled">Cancelled</option>
-                          </select>
-                        </td>
-                      </tr>
-                    ))}
+                    {orders.map((order) => {
+                      // Status badge color logic
+                      let statusColor = 'bg-gray-100 text-gray-800';
+                      if (order.status === 'pending') statusColor = 'bg-yellow-100 text-yellow-800';
+                      else if (order.status === 'processing') statusColor = 'bg-blue-100 text-blue-800';
+                      else if (order.status === 'completed') statusColor = 'bg-green-100 text-green-800';
+                      else if (order.status === 'refunded') statusColor = 'bg-purple-100 text-purple-800';
+                      else if (order.status === 'cancelled') statusColor = 'bg-red-100 text-red-800';
+
+                      // Actions logic (context-aware)
+                      const actions = [];
+                      if (order.status === 'pending') actions.push({ label: 'Mark Processing', value: 'processing' });
+                      if (order.status === 'processing') actions.push({ label: 'Mark Completed', value: 'completed' });
+                      if (order.status !== 'cancelled' && order.status !== 'completed') actions.push({ label: 'Cancel Order', value: 'cancelled' });
+                      if (order.status === 'completed') actions.push({ label: 'Refund', value: 'refunded' });
+
+                      return (
+                        <tr key={order._id}>
+                          {/* Order ID clickable */}
+                          <td className="px-4 py-4 whitespace-nowrap text-sm">
+                            <Link
+                              to={`/admin/orders/${order._id}`}
+                              className="text-blue-700 hover:underline cursor-pointer"
+                              title={order._id}
+                            >
+                              #{order._id.slice(-6)}
+                            </Link>
+                          </td>
+                          {/* Customer info */}
+                          <td className="px-4 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-900">{order.user?.firstName} {order.user?.lastName}</div>
+                            <div className="text-xs text-gray-500">{order.user?.email}</div>
+                          </td>
+                          {/* Project title clickable */}
+                          <td className="px-4 py-4 whitespace-nowrap text-sm text-blue-700 hover:underline cursor-pointer"
+                              onClick={() => {/* TODO: open project details modal/page */}}>
+                            {order.project?.title}
+                          </td>
+                          {/* Amount */}
+                          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                            ₹{order.amount}
+                          </td>
+                          {/* Payment Mode (UPI only for now) */}
+                          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                            UPI
+                          </td>
+                          {/* Status badge */}
+                          <td className="px-4 py-4 whitespace-nowrap">
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColor}`}>
+                              {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                            </span>
+                          </td>
+                          {/* Actions dropdown */}
+                          <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
+                            <div className="relative inline-block text-left w-36">
+                              <select
+                                value=""
+                                onChange={e => {
+                                  if (e.target.value) handleUpdateOrderStatus(order._id, e.target.value);
+                                }}
+                                className="block w-full appearance-none text-sm border border-gray-300 rounded-lg px-3 py-2 pr-8 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-150 hover:border-primary-400 cursor-pointer"
+                              >
+                                <option value="" disabled>Actions</option>
+                                {actions.map(action => (
+                                  <option key={action.value} value={action.value}>{action.label}</option>
+                                ))}
+                              </select>
+                              <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-gray-400">
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+                              </span>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -1272,67 +1318,81 @@ const AdminDashboardPage: React.FC = () => {
         )}
 
         {activeTab === 'settings' && (
-          <div className="bg-white shadow rounded-lg">
-            <div className="px-4 py-5 sm:p-6">
-              <h3 className="text-lg leading-6 font-medium text-gray-900 mb-6">Site Settings</h3>
-              <div className="space-y-6">
+          <div className="flex justify-center items-center min-h-[40vh] px-2">
+            <div className="bg-white shadow-lg rounded-xl w-full max-w-2xl p-4 sm:p-8 animate-fade-in">
+              <h3 className="text-2xl font-bold text-center text-gray-900 mb-8">Site Settings</h3>
+              <form onSubmit={e => { e.preventDefault(); handleSaveSettings(); }} className="space-y-8">
                 <div>
-                  <h4 className="text-md font-medium text-gray-900 mb-4">General Settings</h4>
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <h4 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">General Settings</h4>
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">Site Name</label>
+                      <label htmlFor="site-name" className="block text-sm font-medium text-gray-700">Site Name</label>
                       <input
+                        id="site-name"
                         type="text"
                         value={settings.siteName}
                         onChange={(e) => setSettings({ ...settings, siteName: e.target.value })}
-                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        required
+                        minLength={2}
+                        maxLength={50}
+                        autoComplete="off"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">Contact Email</label>
+                      <label htmlFor="contact-email" className="block text-sm font-medium text-gray-700">Contact Email</label>
                       <input
+                        id="contact-email"
                         type="email"
                         value={settings.contactEmail}
                         onChange={(e) => setSettings({ ...settings, contactEmail: e.target.value })}
-                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        required
+                        autoComplete="off"
                       />
                     </div>
                   </div>
                 </div>
-                
                 <div>
-                  <h4 className="text-md font-medium text-gray-900 mb-4">Project Settings</h4>
+                  <h4 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">Project Settings</h4>
                   <div className="space-y-4">
-                    <div className="flex items-center">
+                    <div className="flex items-center gap-2">
                       <input
+                        id="require-approval"
                         type="checkbox"
                         checked={settings.requireApproval}
                         onChange={(e) => setSettings({ ...settings, requireApproval: e.target.checked })}
                         className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                       />
-                      <label className="ml-2 block text-sm text-gray-900">Require admin approval for new projects</label>
+                      <label htmlFor="require-approval" className="block text-sm text-gray-900 cursor-pointer">Require admin approval for new projects
+                        <span className="ml-1 text-gray-400" title="If enabled, new projects must be approved by an admin before appearing.">🛈</span>
+                      </label>
                     </div>
-                    <div className="flex items-center">
+                    <div className="flex items-center gap-2">
                       <input
+                        id="allow-submissions"
                         type="checkbox"
                         checked={settings.allowSubmissions}
                         onChange={(e) => setSettings({ ...settings, allowSubmissions: e.target.checked })}
                         className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                       />
-                      <label className="ml-2 block text-sm text-gray-900">Allow public project submissions</label>
+                      <label htmlFor="allow-submissions" className="block text-sm text-gray-900 cursor-pointer">Allow public project submissions
+                        <span className="ml-1 text-gray-400" title="If enabled, anyone can submit a project for review.">🛈</span>
+                      </label>
                     </div>
                   </div>
                 </div>
-
-                <div className="flex justify-end">
-                  <button 
-                    onClick={handleSaveSettings}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium"
+                <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+                  <button
+                    type="submit"
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md text-base font-semibold shadow transition-colors duration-200 w-full sm:w-auto"
                   >
                     Save Settings
                   </button>
+                  {/* Feedback message placeholder */}
+                  {/* <div className="text-green-600 text-sm font-medium mt-2">Settings saved!</div> */}
                 </div>
-              </div>
+              </form>
             </div>
           </div>
         )}

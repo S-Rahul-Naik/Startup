@@ -1,9 +1,229 @@
+// const express = require('express');
+// const router = express.Router();
+// const Order = require('../models/Order');
+// const Project = require('../models/Project');
+// const { auth } = require('../middleware/auth');
+// const { sendEmail } = require('../utils/email');
+const PDFDocument = require('pdfkit');
+const stream = require('stream');
 const express = require('express');
 const router = express.Router();
 const Order = require('../models/Order');
 const Project = require('../models/Project');
 const { auth } = require('../middleware/auth');
 const { sendEmail } = require('../utils/email');
+
+// Download invoice as PDF (admin or order owner)
+router.get('/:id/invoice', auth, async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id)
+      .populate('user', 'firstName lastName email phone address')
+      .populate('project', 'title description deliveryDate');
+    if (!order) return res.status(404).json({ error: 'Order not found' });
+    if (req.user.role !== 'admin' && order.user._id.toString() !== req.user.id) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    // --- COLORS & FONTS ---
+    const PDFKit = require('pdfkit');
+    const path = require('path');
+    const doc = new PDFKit({ size: 'A4', margin: 0 });
+    let buffers = [];
+    doc.on('data', buffers.push.bind(buffers));
+    doc.on('end', () => {
+      const pdfData = Buffer.concat(buffers);
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename=invoice-${order._id}.pdf`);
+      res.send(pdfData);
+    });
+
+    const primaryBlue = '#2554c7';
+    const green = '#43d17a';
+    const lightBg = '#f8f9fa';
+    const sectionBg1 = '#f4f7fa';
+    const sectionBg2 = '#e9f0ffcc';
+    const sectionBg3 = '#e8f8f1cc';
+    const statusRefundedBg = '#f8d7da';
+    const statusRefundedText = '#842029';
+    const amountBoxBorder = '#b3dbb6';
+    const amountBoxText = '#0f9d58';
+    const white = '#fff';
+
+    // --- HEADER GRADIENT ---
+    const headerHeight = 90;
+    const pageWidth = doc.page.width;
+    const contentMargin = 30;
+    const sectionRadius = 10;
+
+    // Draw header gradient
+    const gradient = doc.linearGradient(0, 0, pageWidth, 0);
+    gradient.stop(0, primaryBlue).stop(1, green);
+    doc.save();
+    doc.rect(0, 0, pageWidth, headerHeight).fill(gradient);
+    doc.restore();
+
+    // --- LOGO & COMPANY INFO ---
+    const logoPath = path.join(__dirname, '../../client/public/logo.png');
+    let logoY = 22;
+    let logoX = contentMargin + 2;
+    try {
+      doc.image(logoPath, logoX, logoY, { width: 44, height: 44 });
+    } catch (e) {
+      doc.circle(logoX + 22, logoY + 22, 22).fill('white').stroke(primaryBlue);
+      doc.fontSize(22).fillColor(primaryBlue).text('E', logoX + 10, logoY + 10, { width: 24, align: 'center' });
+    }
+    doc.font('Helvetica-BoldOblique').fontSize(20).fillColor('white').text('EduTech', logoX + 54, logoY + 2, { continued: false });
+    doc.font('Helvetica').fontSize(10).fillColor('white').text('Educational Technology Solutions', logoX + 54, logoY + 26);
+    doc.font('Helvetica-Bold').fontSize(20).fillColor('white').text('INVOICE', pageWidth - contentMargin - 120, logoY + 2, { width: 120, align: 'right' });
+    doc.font('Helvetica-Bold').fontSize(12).fillColor('white').text(`#${order._id.toString().slice(-8).toUpperCase()}`, pageWidth - contentMargin - 120, logoY + 28, { width: 120, align: 'right' });
+
+    // --- ORDER INFO SECTION ---
+    let y = headerHeight + 18;
+    // Softer section color, plain header
+    const section1Bg = '#f6f8fb';
+    doc.roundedRect(contentMargin, y, pageWidth - 2 * contentMargin, 80, sectionRadius).fill(section1Bg);
+    // --- Improved Order Info Section Layout ---
+    // --- Polished Order Info Section Layout ---
+    const sectionPaddingY = 22;
+    doc.font('Helvetica-Bold').fontSize(13).fillColor(primaryBlue).text('Order Info', contentMargin + 24, y + sectionPaddingY);
+    // Layout variables
+    const labelFont = 'Helvetica-Bold';
+    const valueFont = 'Helvetica';
+    const infoY = y + sectionPaddingY + 28;
+    const col1X = contentMargin + 36;
+    const col2X = col1X + 210;
+    const col3X = col2X + 190;
+    // Order ID
+    doc.font(labelFont).fontSize(11).fillColor('black').text('Order ID:', col1X, infoY, { continued: true });
+    doc.font(valueFont).fontSize(11).text(order._id.toString(), { continued: false });
+    // Date
+    doc.font(labelFont).fontSize(11).fillColor('black').text('Date:', col2X, infoY, { continued: true });
+    doc.font(valueFont).fontSize(11).text(new Date(order.createdAt).toLocaleString(), { continued: false });
+    // Status label
+    doc.font(labelFont).fontSize(11).fillColor('black').text('Status:', col3X, infoY, { continued: false });
+    // Status badge
+    let statusText = order.status.charAt(0).toUpperCase() + order.status.slice(1);
+    let statusBg = statusRefundedBg;
+    let statusFg = statusRefundedText;
+    if (order.status === 'paid' || order.status === 'completed' || order.status === 'delivered') {
+      statusBg = '#d1e7dd';
+      statusFg = '#0f5132';
+    } else if (order.status === 'pending' || order.status === 'processing') {
+      statusBg = '#fff3cd';
+      statusFg = '#664d03';
+    }
+    // Vertically center badge with label
+    const badgeWidth = 90;
+    const badgeHeight = 22;
+    const badgeX = col3X + 54;
+    const badgeY = infoY - 1; // +3px for better vertical alignment
+    doc.roundedRect(badgeX, badgeY, badgeWidth, badgeHeight, 6).fill(statusBg);
+    doc.font('Helvetica-Bold').fontSize(13).fillColor(statusFg).text(statusText, badgeX, badgeY + 4, { width: badgeWidth, align: 'center' });
+
+    // --- ORDER DETAILS SECTION ---
+  y += 100;
+  const section2Bg = '#eaf2fb';
+  doc.roundedRect(contentMargin, y, pageWidth - 2 * contentMargin, 100, sectionRadius).fill(section2Bg);
+  doc.font('Helvetica-Bold').fontSize(12).fillColor(primaryBlue).text('Order Details', contentMargin + 16, y + 14);
+  let detailsY = y + 38;
+  // Keys bold, values regular, consistent spacing
+  doc.font('Helvetica-Bold').fontSize(10).fillColor('black').text('Customer:', contentMargin + 16, detailsY, { continued: true });
+  doc.font('Helvetica').fontSize(10).text(`${order.user.firstName} ${order.user.lastName}`, { continued: false });
+  doc.font('Helvetica-Bold').fontSize(10).fillColor('black').text('Email:', contentMargin + 180, detailsY, { continued: true });
+  doc.font('Helvetica').fontSize(10).text(order.user.email || '', { continued: false });
+  doc.font('Helvetica-Bold').fontSize(10).fillColor('black').text('Phone:', contentMargin + 350, detailsY, { continued: true });
+  doc.font('Helvetica').fontSize(10).text(order.user.phone || '', { continued: false });
+  doc.font('Helvetica-Bold').fontSize(10).fillColor('black').text('Project:', contentMargin + 16, detailsY + 24, { continued: true });
+  doc.font('Helvetica').fontSize(10).text(order.project.title || '', { continued: false });
+  doc.font('Helvetica-Bold').fontSize(10).fillColor('black').text('Description:', contentMargin + 180, detailsY + 24, { continued: true });
+  // Wrap description, add right margin, use slightly smaller font for long text
+  let desc = order.project.description || '';
+  let descFontSize = desc.length > 40 ? 9 : 10;
+  doc.font('Helvetica').fontSize(descFontSize).text(desc, contentMargin + 260, detailsY + 24, { width: pageWidth - (contentMargin + 260) - 60 });
+
+    // --- PAYMENT INFO SECTION ---
+  y += 120;
+  const section3Bg = '#d6f5ea';
+  doc.roundedRect(contentMargin, y, pageWidth - 2 * contentMargin, 80, sectionRadius).fill(section3Bg);
+  doc.font('Helvetica-Bold').fontSize(12).fillColor(green).text('Payment Info', contentMargin + 16, y + 14);
+  let payY = y + 38;
+  // Amount label and box
+  // Align Amount and Payment Mode vertically
+  const amountLabelX = contentMargin + 16;
+  const amountLabelY = payY + 8;
+  doc.font('Helvetica-Bold').fontSize(11).fillColor('black').text('Amount:', amountLabelX, amountLabelY, { continued: false });
+  // Amount box
+  const amountBoxX = amountLabelX + 65;
+  const amountBoxY = payY;
+  const amountBoxW = 90;
+  const amountBoxH = 32;
+  doc.roundedRect(amountBoxX, amountBoxY, amountBoxW, amountBoxH, 6).fillAndStroke('#f8fff8', amountBoxBorder);
+  doc.font('Helvetica-Bold').fontSize(17).fillColor(amountBoxText).text(`Rs. ${order.amount}`, amountBoxX, amountBoxY + 7, { width: amountBoxW, align: 'center' });
+  // Payment Mode aligned with amount, add space after colon
+  let paymentMode = 'UPI';
+  const payModeLabelX = amountBoxX + amountBoxW + 40;
+  doc.font('Helvetica-Bold').fontSize(11).fillColor('black').text('Payment Mode: ', payModeLabelX, amountLabelY, { continued: true });
+  doc.font('Helvetica').fontSize(11).text(paymentMode, { continued: false });
+
+    // --- SUMMARY SECTION ---
+  y += 90; // reduce gap between Order Details and Payment Info
+  doc.roundedRect(contentMargin, y, pageWidth - 2 * contentMargin, 60, sectionRadius).fill(lightBg);
+  doc.font('Helvetica-Bold').fontSize(11).fillColor(primaryBlue).text('Summary', contentMargin + 16, y + 16);
+  doc.font('Helvetica').fontSize(9).fillColor('black').text(`Order Status: ${statusText}`, contentMargin + 16, y + 36, { continued: true }).text(` | Order Date: ${new Date(order.createdAt).toLocaleString()}`, { continued: true }).text(` | Invoice Generated: ${new Date().toLocaleString()}`);
+
+    // --- FOOTER ---
+  // Footer slightly lower and darker for readability
+  doc.fontSize(11).fillColor('#555').text('Thank you for your business!', 0, y + 110, { align: 'center' });
+  doc.fontSize(10).fillColor('#777').text('EduTech | www.edutech.com', 0, y + 126, { align: 'center' });
+    doc.end();
+  } catch (error) {
+    console.error('Error generating invoice:', error);
+    res.status(500).json({ error: 'Failed to generate invoice' });
+  }
+});
+
+// Update admin notes (admin only)
+router.patch('/:id/admin-notes', auth, async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+    const { adminNotes } = req.body;
+    const order = await Order.findById(req.params.id);
+    if (!order) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+    order.adminNotes = adminNotes;
+    await order.save();
+    res.json({ adminNotes: order.adminNotes });
+  } catch (error) {
+    console.error('Error updating admin notes:', error);
+    res.status(500).json({ error: 'Failed to update admin notes' });
+  }
+});
+
+
+// Get order by ID (admin only, full details)
+router.get('/admin/:id', auth, async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+    const order = await Order.findById(req.params.id)
+      .populate('user', 'firstName lastName email phone address')
+      .populate('project', 'title description deliveryDate')
+      .lean();
+    if (!order) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+    // Optionally, add status history and admin notes if present
+    res.json({ order });
+  } catch (error) {
+    console.error('Error fetching admin order details:', error);
+    res.status(500).json({ error: 'Failed to fetch order details' });
+  }
+});
+
 
 // Get user's orders (authenticated users)
 router.get('/my-orders', auth, async (req, res) => {
@@ -185,24 +405,28 @@ router.patch('/:id/status', auth, async (req, res) => {
     
     const { status, notes } = req.body;
     
-    if (!['pending', 'processing', 'completed', 'cancelled', 'refunded'].includes(status)) {
+  if (!['pending', 'paid', 'processing', 'delivered', 'completed', 'cancelled', 'refunded'].includes(status)) {
       return res.status(400).json({ error: 'Invalid status' });
     }
     
-    const order = await Order.findByIdAndUpdate(
-      req.params.id,
-      { 
-        status, 
-        notes: notes || '',
-        updatedAt: new Date()
-      },
-      { new: true, runValidators: true }
-    ).populate('project', 'title price images');
-    
+    const order = await Order.findById(req.params.id);
     if (!order) {
       return res.status(404).json({ error: 'Order not found' });
     }
-    
+    // Only update if status is actually changing
+    if (order.status !== status) {
+      order.status = status;
+      order.notes = notes || '';
+      order.updatedAt = new Date();
+      order.statusHistory = order.statusHistory || [];
+      order.statusHistory.push({
+        status,
+        updatedBy: req.user._id,
+        updatedAt: new Date()
+      });
+      await order.save();
+    }
+    await order.populate('project', 'title price images');
     res.json(order);
   } catch (error) {
     console.error('Error updating order status:', error);
