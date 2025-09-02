@@ -87,12 +87,17 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
       return calculateCartTotals(updatedItems);
     }
 
+
     case 'CLEAR_CART': {
       return initialState;
     }
 
     case 'LOAD_CART': {
-      return calculateCartTotals(action.payload);
+      if (Array.isArray(action.payload) && action.payload.length > 0) {
+        return calculateCartTotals(action.payload);
+      } else {
+        return state;
+      }
     }
 
     default:
@@ -124,23 +129,31 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 // Provider Component
 export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [state, dispatch] = useReducer(cartReducer, initialState);
+  const isFirstLoad = React.useRef(true);
 
   // Load cart from localStorage on mount
   useEffect(() => {
     const savedCart = localStorage.getItem('edutech-cart');
+    console.log('[CartContext] Loaded from localStorage:', savedCart);
     if (savedCart) {
       try {
         const parsedCart = JSON.parse(savedCart);
-        dispatch({ type: 'LOAD_CART', payload: parsedCart });
+        if (Array.isArray(parsedCart) && parsedCart.length > 0) {
+          console.log('[CartContext] Parsed cart:', parsedCart);
+          dispatch({ type: 'LOAD_CART', payload: parsedCart });
+        }
       } catch (error) {
-        console.error('Failed to parse saved cart:', error);
+        console.error('[CartContext] Failed to parse saved cart:', error);
         localStorage.removeItem('edutech-cart');
       }
     }
+    isFirstLoad.current = false;
   }, []);
 
-  // Save cart to localStorage whenever it changes
+  // Save cart to localStorage whenever it changes, but skip first load
   useEffect(() => {
+    if (isFirstLoad.current) return;
+    console.log('[CartContext] Saving to localStorage:', state.items);
     localStorage.setItem('edutech-cart', JSON.stringify(state.items));
   }, [state.items]);
 

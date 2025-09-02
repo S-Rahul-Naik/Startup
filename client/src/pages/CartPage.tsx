@@ -153,9 +153,10 @@ const CartPage: React.FC = () => {
                         {/* Item Image */}
                         <div className="flex-shrink-0">
                           <img
-                            src={item.image || 'https://via.placeholder.com/80x80?text=Project'}
+                            src={item.image && item.image !== '' ? item.image : '/images/project-placeholder.png'}
                             alt={item.title}
                             className="w-20 h-20 rounded-lg object-cover bg-gray-200"
+                            onError={e => { e.currentTarget.src = '/images/project-placeholder.png'; }}
                           />
                         </div>
 

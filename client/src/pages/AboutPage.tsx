@@ -11,10 +11,10 @@ import {
 
 const AboutPage: React.FC = () => {
   const stats = [
-    { label: 'Projects Delivered', value: '10,000+', icon: TrophyIcon },
-    { label: 'Happy Students', value: '8,500+', icon: HeartIcon },
-    { label: 'Expert Mentors', value: '200+', icon: UserGroupIcon },
-    { label: 'Years Experience', value: '8+', icon: GlobeAltIcon }
+    { label: 'Projects Delivered', value: 'Dozens', description: 'of projects already in progress', icon: TrophyIcon },
+    { label: 'Happy Students', value: 'Growing', description: 'community of learners', icon: HeartIcon },
+    { label: 'Expert Mentors', value: 'Industry', description: 'professionals guiding every project', icon: UserGroupIcon },
+    { label: 'Years Experience', value: 'Fresh', description: 'expertise backing us', icon: GlobeAltIcon }
   ];
 
   const values = [
@@ -42,22 +42,23 @@ const AboutPage: React.FC = () => {
 
   const team = [
     {
-      name: 'Dr. Rajesh Kumar',
+      name: 'Sugali Rahul Naik',
       role: 'Founder & CEO',
-      expertise: 'PhD in Computer Science, 15+ years in academia',
-      image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150'
+      expertise: 'Founder passionate about making academic projects smarter, accessible, and impactful. Skilled in building software projects of any type.',
+      image: '/images/undraw_developer-avatar_f6ac.svg'
+    },
+    
+    {
+      name: 'Harsha J N',
+      role: 'Co-Founder & Lead Innovator',
+      expertise: 'National Hackathon winner in Electric Vehicles (EV), passionate about sustainable and future-ready solutions. ',
+      image: '/images/undraw_developer-avatar_f6ac.svg'
     },
     {
-      name: 'Prof. Priya Sharma',
-      role: 'Head of Engineering',
-      expertise: 'M.Tech in VLSI Design, 12+ years experience',
-      image: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150'
-    },
-    {
-      name: 'Arun Patel',
-      role: 'Lead Mentor',
-      expertise: 'B.Tech in Electronics, 8+ years in embedded systems',
-      image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150'
+      name: 'Rohan Hiremath',
+    role: 'Co-Founder & Tech Lead',
+    expertise: 'Computer Science engineer with expertise in building scalable software and cloud-based solutions.',
+      image: '/images/undraw_developer-avatar_f6ac.svg'
     }
   ];
 
@@ -158,10 +159,10 @@ const AboutPage: React.FC = () => {
             className="text-center mb-16"
           >
             <h2 className="text-3xl font-bold text-gray-900 mb-4">
-              Our Impact in Numbers
+              Our Journey So Far
             </h2>
             <p className="text-xl text-gray-600">
-              Delivering excellence across thousands of projects
+              Shaping ideas into projects, step by step
             </p>
           </motion.div>
 
@@ -183,7 +184,7 @@ const AboutPage: React.FC = () => {
                     {stat.value}
                   </div>
                   <div className="text-gray-600">
-                    {stat.label}
+                    {stat.description}
                   </div>
                 </motion.div>
               );

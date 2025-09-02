@@ -30,6 +30,7 @@ import AboutPage from './pages/AboutPage';
 import ContactPage from './pages/ContactPage';
 import NotFoundPage from './pages/NotFoundPage';
 import CustomProjectForm from './pages/CustomProjectForm';
+import OrderDetailsPage from './pages/OrderDetailsPage';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -91,6 +92,16 @@ function App() {
                     </ProtectedRoute>
                   } />
                   <Route path="/order-success" element={<OrderSuccessPage />} />
+                  <Route path="/admin/orders/:orderId" element={
+                    <ProtectedRoute requiredRole="admin">
+                      <OrderDetailsPage />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/dashboard/orders/:orderId" element={
+                    <ProtectedRoute>
+                      <OrderDetailsPage />
+                    </ProtectedRoute>
+                  } />
                   
                   {/* 404 Route */}
                   <Route path="*" element={<NotFoundPage />} />
@@ -130,4 +141,4 @@ function App() {
   );
 }
 
-export default App; 
+export default App;

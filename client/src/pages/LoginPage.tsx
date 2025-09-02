@@ -19,7 +19,7 @@ const LoginPage: React.FC = () => {
   const location = useLocation();
 
   // Get the page user was trying to access
-  const from = location.state?.from?.pathname || '/dashboard';
+  const from = location.state?.from?.pathname || '/';
 
   const {
     register,
@@ -53,9 +53,9 @@ const LoginPage: React.FC = () => {
   const onSubmit = async (data: LoginFormData) => {
     try {
       setIsSubmitting(true);
-      await login(data.email, data.password);
-      toast.success('Login successful!');
-      navigate(from, { replace: true });
+  await login(data.email, data.password);
+  toast.success('Login successful!');
+  navigate(from, { replace: true });
     } catch (error: any) {
       // Error is already handled by the auth context
       console.error('Login failed:', error);
