@@ -194,7 +194,10 @@ router.get('/projects', async (req, res) => {
 });
 
 // Create new project (admin only)
-router.post('/projects', upload.array('files', 10), async (req, res) => {
+router.post('/projects', upload.fields([
+  { name: 'files', maxCount: 10 },
+  { name: 'blockDiagram', maxCount: 1 }
+]), async (req, res) => {
   try {
     const { title, description, price, category, domain, difficulty, isPublished } = req.body;
     
@@ -228,8 +231,8 @@ router.post('/projects', upload.array('files', 10), async (req, res) => {
     
     // Process uploaded files
     const uploadedFiles = [];
-    if (req.files && req.files.length > 0) {
-      req.files.forEach(file => {
+    if (req.files && req.files['files']) {
+      req.files['files'].forEach(file => {
         uploadedFiles.push({
           filename: file.filename,
           originalname: file.originalname,
@@ -239,7 +242,15 @@ router.post('/projects', upload.array('files', 10), async (req, res) => {
         });
       });
     }
-    
+
+    // Handle block diagram image
+    let blockDiagramPath = '';
+    if (req.files && req.files['blockDiagram'] && req.files['blockDiagram'][0]) {
+      blockDiagramPath = '/uploads/projects/' + req.files['blockDiagram'][0].filename;
+    } else if (req.body.blockDiagram) {
+      blockDiagramPath = req.body.blockDiagram;
+    }
+
     // Create a simplified project with required fields
     const project = new Project({
       title,
@@ -255,7 +266,11 @@ router.post('/projects', upload.array('files', 10), async (req, res) => {
       approvedBy: req.user.id,
       approvedAt: new Date(),
       status: isPublished ? 'published' : 'draft',
-      files: uploadedFiles // Add uploaded files to project
+      files: uploadedFiles, // Add uploaded files to project
+      abstract: req.body.abstract || '',
+      blockDiagram: blockDiagramPath,
+      specifications: req.body.specifications || '',
+      learningOutcomes: req.body.learningOutcomes || []
     });
     
     await project.save();
@@ -299,7 +314,11 @@ router.put('/projects/:id', async (req, res) => {
         domain,
         difficulty,
         isPublished,
-        updatedBy: req.user.id
+        updatedBy: req.user.id,
+        abstract: req.body.abstract || '',
+        blockDiagram: req.body.blockDiagram || '',
+        specifications: req.body.specifications || '',
+        learningOutcomes: req.body.learningOutcomes || []
       },
       { new: true, runValidators: true }
     );

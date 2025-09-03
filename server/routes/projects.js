@@ -60,7 +60,7 @@ router.get('/:id', async (req, res) => {
     const project = await Project.findById(req.params.id)
       .populate('creator', 'firstName lastName email')
       .populate('category', 'name')
-      .select('title description shortDescription price category domain difficulty creator isPublished files images rating views orders createdAt');
+      .select('title description shortDescription price category domain difficulty creator isPublished files images rating views orders createdAt abstract blockDiagram specifications learningOutcomes');
     
     if (!project) {
       return res.status(404).json({ error: 'Project not found' });

@@ -7,6 +7,26 @@ const projectSchema = new mongoose.Schema({
     trim: true,
     maxlength: [200, 'Title cannot exceed 200 characters']
   },
+  abstract: {
+    type: String,
+    trim: true,
+    maxlength: [5000, 'Abstract cannot exceed 5000 characters']
+  },
+  blockDiagram: {
+    type: String, // URL or description
+    trim: true,
+    maxlength: [1000, 'Block diagram info cannot exceed 1000 characters']
+  },
+  specifications: {
+    type: String,
+    trim: true,
+    maxlength: [3000, 'Specifications cannot exceed 3000 characters']
+  },
+  learningOutcomes: [{
+    type: String,
+    trim: true,
+    maxlength: [500, 'Learning outcome cannot exceed 500 characters']
+  }],
   description: {
     type: String,
     required: [true, 'Project description is required'],
@@ -31,6 +51,7 @@ const projectSchema = new mongoose.Schema({
       'Embedded Systems',
       'Signal Processing',
       'Communication Systems',
+      'IoT',
       'Others',
       'Power Systems',
       'Control Systems',

@@ -24,7 +24,7 @@ router.post('/register', [
   body('phone').matches(/^[\+]?[1-9][\d]{0,15}$/).withMessage('Please provide a valid phone number'),
   body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
   body('qualification').isIn(['School', 'Diploma', 'B.Tech', 'M.Tech', 'PhD', 'Others']).withMessage('Invalid qualification'),
-  body('domain').isIn(['Electrical-(EEE)', 'Electronics&Communications-(ECE)', 'Computer Science', 'Others']).withMessage('Invalid domain'),
+  body('domain').isIn(['Electrical-(EEE)', 'Electronics&Communications-(ECE)', 'Computer Science', 'IoT', 'Others']).withMessage('Invalid domain'),
   body('college').optional().trim().isLength({ max: 100 }).withMessage('College name cannot exceed 100 characters'),
   body('year').optional().isInt({ min: 1, max: 10 }).withMessage('Year must be between 1 and 10')
 ], async (req, res) => {

@@ -4,7 +4,13 @@ const path = require('path');
 // Set up storage for uploaded files
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-  const dest = path.join(__dirname, '../../uploads/custom-requests');
+    // Save blockDiagram files to /uploads/projects, others to /uploads/custom-requests
+    let dest;
+    if (file.fieldname === 'blockDiagram') {
+      dest = path.join(__dirname, '../../uploads/projects');
+    } else {
+      dest = path.join(__dirname, '../../uploads/custom-requests');
+    }
     console.log('[MULTER] Saving file to:', dest);
     cb(null, dest);
   },

@@ -17,7 +17,10 @@ const CheckoutPage: React.FC = () => {
   const navigate = useNavigate();
   const [isProcessing, setIsProcessing] = useState(false);
   const [upiId, setUpiId] = useState('');
+  const [upiLoading, setUpiLoading] = useState(true);
+  const [upiError, setUpiError] = useState<string | null>(null);
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
   const [addressFields, setAddressFields] = useState({
     name: '',
     email: '',
@@ -29,12 +32,20 @@ const CheckoutPage: React.FC = () => {
     zip: '',
     country: 'India',
   });
+  const [formErrors, setFormErrors] = useState<{ [key: string]: string }>({});
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   React.useEffect(() => {
-    // Fetch UPI ID from backend
+    setUpiLoading(true);
+    setUpiError(null);
     fetch('http://localhost:5001/api/upi')
-      .then(res => res.json())
-      .then(data => setUpiId(data.upiId || ''));
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to fetch UPI ID');
+        return res.json();
+      })
+      .then(data => setUpiId(data.upiId || ''))
+      .catch(() => setUpiError('Could not load UPI ID. Please try again later.'))
+      .finally(() => setUpiLoading(false));
   }, []);
 
   const handleAddressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -45,30 +56,45 @@ const CheckoutPage: React.FC = () => {
   const handleReceiptChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setReceiptFile(e.target.files[0]);
+      const file = e.target.files[0];
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = ev => setReceiptPreview(ev.target?.result as string);
+        reader.readAsDataURL(file);
+      } else {
+        setReceiptPreview(null);
+      }
     }
+  };
+
+  const validateFields = () => {
+    const errors: { [key: string]: string } = {};
+    if (!receiptFile) errors.receipt = 'Please upload your payment receipt.';
+    if (!addressFields.name.trim()) errors.name = 'Full name is required.';
+    if (!addressFields.email.trim() || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(addressFields.email)) errors.email = 'Valid email is required.';
+    if (!addressFields.phone.trim() || !/^\d{10}$/.test(addressFields.phone)) errors.phone = 'Valid 10-digit phone number required.';
+    if (!addressFields.street.trim()) errors.street = 'Street address is required.';
+    if (!addressFields.city.trim()) errors.city = 'City is required.';
+    if (!addressFields.district.trim()) errors.district = 'District is required.';
+    if (!addressFields.state.trim()) errors.state = 'State is required.';
+    if (!addressFields.zip.trim() || !/^\d{6}$/.test(addressFields.zip)) errors.zip = 'Valid 6-digit ZIP code required.';
+    return errors;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFormErrors({});
+    setSubmitError(null);
     if (!user) {
       toast.error('Please login to continue');
       navigate('/login');
       return;
     }
-    if (!receiptFile) {
-      toast.error('Please upload your payment receipt.');
+    const errors = validateFields();
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      toast.error('Please fix the errors in the form.');
       return;
-    }
-    // Validate all address fields
-    if (!addressFields.name || addressFields.name.trim() === '') {
-      toast.error('Please enter your full name.');
-      return;
-    }
-    for (const key of Object.keys(addressFields)) {
-      if (!addressFields[key as keyof typeof addressFields] || addressFields[key as keyof typeof addressFields].trim() === '') {
-        toast.error('Please fill all address fields.');
-        return;
-      }
     }
     setIsProcessing(true);
     try {
@@ -80,11 +106,7 @@ const CheckoutPage: React.FC = () => {
         Object.entries(addressFields).forEach(([key, value]) => {
           formData.append(key, value);
         });
-        formData.append('receipt', receiptFile);
-        // Debug: log FormData keys/values
-        Array.from(formData.entries()).forEach(pair => {
-          console.log(pair[0] + ': ' + pair[1]);
-        });
+        formData.append('receipt', receiptFile!);
         const response = await fetch('http://localhost:5001/api/orders', {
           method: 'POST',
           headers: {
@@ -105,6 +127,7 @@ const CheckoutPage: React.FC = () => {
       clearCart();
       navigate('/order-success');
     } catch (error: any) {
+      setSubmitError(error?.message || 'Payment failed. Please try again.');
       toast.error(error?.message || 'Payment failed. Please try again.');
       console.error('Payment error:', error);
     } finally {
@@ -161,7 +184,11 @@ const CheckoutPage: React.FC = () => {
                 <div className="mb-4">
                   <label className="block text-sm font-medium text-gray-700 mb-2">Current UPI ID (Pay to this ID):</label>
                   <div className="bg-gray-100 px-4 py-2 rounded text-lg font-mono text-primary-700 select-all">
-                    {upiId || 'Loading...'}
+                    {upiLoading ? 'Loading...' : upiError ? (
+                      <span className="text-red-500">{upiError}</span>
+                    ) : (
+                      upiId
+                    )}
                   </div>
                   <p className="text-xs text-gray-500 mt-1">Please pay using your UPI app and upload the payment receipt below.</p>
                 </div>
@@ -173,8 +200,15 @@ const CheckoutPage: React.FC = () => {
                       accept="image/*,application/pdf"
                       onChange={handleReceiptChange}
                       required
-                      className="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"
+                      aria-invalid={!!formErrors.receipt}
+                      className={`block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100 ${formErrors.receipt ? 'border-red-500' : ''}`}
                     />
+                    {formErrors.receipt && <div className="text-red-500 text-xs mt-1">{formErrors.receipt}</div>}
+                    {receiptPreview && (
+                      <div className="mt-2">
+                        <img src={receiptPreview} alt="Receipt Preview" className="max-h-40 rounded border" />
+                      </div>
+                    )}
                   </div>
                   <div>
                     <h3 className="text-lg font-medium text-gray-900 mb-4">Delivery Address Details</h3>
@@ -187,9 +221,11 @@ const CheckoutPage: React.FC = () => {
                           value={addressFields.name}
                           onChange={handleAddressChange}
                           required
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                          aria-invalid={!!formErrors.name}
+                          className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent ${formErrors.name ? 'border-red-500' : 'border-gray-300'}`}
                           placeholder="Your Name"
                         />
+                        {formErrors.name && <div className="text-red-500 text-xs mt-1">{formErrors.name}</div>}
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div>
@@ -200,9 +236,11 @@ const CheckoutPage: React.FC = () => {
                             value={addressFields.email}
                             onChange={handleAddressChange}
                             required
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                            aria-invalid={!!formErrors.email}
+                            className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent ${formErrors.email ? 'border-red-500' : 'border-gray-300'}`}
                             placeholder="you@email.com"
                           />
+                          {formErrors.email && <div className="text-red-500 text-xs mt-1">{formErrors.email}</div>}
                         </div>
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
@@ -212,9 +250,11 @@ const CheckoutPage: React.FC = () => {
                             value={addressFields.phone}
                             onChange={handleAddressChange}
                             required
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                            aria-invalid={!!formErrors.phone}
+                            className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent ${formErrors.phone ? 'border-red-500' : 'border-gray-300'}`}
                             placeholder="10-digit mobile number"
                           />
+                          {formErrors.phone && <div className="text-red-500 text-xs mt-1">{formErrors.phone}</div>}
                         </div>
                       </div>
                       <div>
@@ -225,9 +265,11 @@ const CheckoutPage: React.FC = () => {
                           value={addressFields.street}
                           onChange={handleAddressChange}
                           required
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                          aria-invalid={!!formErrors.street}
+                          className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent ${formErrors.street ? 'border-red-500' : 'border-gray-300'}`}
                           placeholder="Street, Area, Landmark"
                         />
+                        {formErrors.street && <div className="text-red-500 text-xs mt-1">{formErrors.street}</div>}
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div>
@@ -238,9 +280,11 @@ const CheckoutPage: React.FC = () => {
                             value={addressFields.city}
                             onChange={handleAddressChange}
                             required
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                            aria-invalid={!!formErrors.city}
+                            className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent ${formErrors.city ? 'border-red-500' : 'border-gray-300'}`}
                             placeholder="City"
                           />
+                          {formErrors.city && <div className="text-red-500 text-xs mt-1">{formErrors.city}</div>}
                         </div>
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">District</label>
@@ -250,9 +294,11 @@ const CheckoutPage: React.FC = () => {
                             value={addressFields.district}
                             onChange={handleAddressChange}
                             required
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                            aria-invalid={!!formErrors.district}
+                            className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent ${formErrors.district ? 'border-red-500' : 'border-gray-300'}`}
                             placeholder="District"
                           />
+                          {formErrors.district && <div className="text-red-500 text-xs mt-1">{formErrors.district}</div>}
                         </div>
                       </div>
                       <div className="grid grid-cols-2 gap-4">
@@ -264,9 +310,11 @@ const CheckoutPage: React.FC = () => {
                             value={addressFields.state}
                             onChange={handleAddressChange}
                             required
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                            aria-invalid={!!formErrors.state}
+                            className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent ${formErrors.state ? 'border-red-500' : 'border-gray-300'}`}
                             placeholder="State"
                           />
+                          {formErrors.state && <div className="text-red-500 text-xs mt-1">{formErrors.state}</div>}
                         </div>
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">ZIP Code</label>
@@ -276,9 +324,11 @@ const CheckoutPage: React.FC = () => {
                             value={addressFields.zip}
                             onChange={handleAddressChange}
                             required
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                            aria-invalid={!!formErrors.zip}
+                            className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent ${formErrors.zip ? 'border-red-500' : 'border-gray-300'}`}
                             placeholder="PIN/ZIP Code"
                           />
+                          {formErrors.zip && <div className="text-red-500 text-xs mt-1">{formErrors.zip}</div>}
                         </div>
                       </div>
                       <div>
@@ -293,10 +343,12 @@ const CheckoutPage: React.FC = () => {
                       </div>
                     </div>
                   </div>
+                  {submitError && <div className="text-red-500 text-sm mb-2">{submitError}</div>}
                   <button
                     type="submit"
-                    disabled={isProcessing}
+                    disabled={isProcessing || upiLoading || !!upiError}
                     className="w-full bg-primary-600 hover:bg-primary-700 disabled:bg-primary-400 text-white font-medium py-3 px-4 rounded-lg transition-colors transform hover:scale-105 disabled:transform-none disabled:cursor-not-allowed"
+                    aria-busy={isProcessing}
                   >
                     {isProcessing ? (
                       <div className="flex items-center justify-center">
@@ -330,25 +382,42 @@ const CheckoutPage: React.FC = () => {
               <div className="bg-white rounded-lg shadow-soft p-6 sticky top-8">
                 <h2 className="text-xl font-semibold text-gray-900 mb-6">Order Summary</h2>
                 <div className="space-y-4 mb-6">
-                  {cartItems.map((item) => (
-                    <div key={item._id} className="flex items-center space-x-3">
-                      <img
-                        src={item.image || 'https://via.placeholder.com/60x60?text=Project'}
-                        alt={item.title}
-                        className="w-15 h-15 rounded-lg object-cover bg-gray-200"
-                      />
-                      <div className="flex-1">
-                        <h4 className="font-medium text-gray-900">{item.title}</h4>
-                        <p className="text-sm text-gray-500">{item.category}</p>
-                        <p className="text-sm text-gray-500">Qty: {item.quantity}</p>
+                  {cartItems.map((item) => {
+                    // Robust image logic: backend file, external URL, or placeholder
+                    let imageUrl = '';
+                    if (item.image && !item.image.startsWith('http') && !item.image.startsWith('/') && /\.(jpg|jpeg|png|gif|webp)$/i.test(item.image)) {
+                      imageUrl = `http://localhost:5001/api/projects/files/${item.image}`;
+                    } else if (item.image && item.image.startsWith('http')) {
+                      imageUrl = item.image;
+                    } else if (item.image && item.image.startsWith('/')) {
+                      imageUrl = item.image;
+                    } else {
+                      imageUrl = 'https://via.placeholder.com/60x60?text=Project';
+                    }
+                    return (
+                      <div key={item._id} className="flex items-center space-x-3">
+                        <img
+                          src={imageUrl}
+                          alt={item.title}
+                          className="w-15 h-15 rounded-lg object-cover bg-gray-200"
+                          onError={e => {
+                            e.currentTarget.onerror = null;
+                            e.currentTarget.src = 'https://via.placeholder.com/60x60?text=Project';
+                          }}
+                        />
+                        <div className="flex-1">
+                          <h4 className="font-medium text-gray-900">{item.title}</h4>
+                          <p className="text-sm text-gray-500">{item.category}</p>
+                          <p className="text-sm text-gray-500">Qty: {item.quantity}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-medium text-gray-900">
+                            {formatPrice(item.price * item.quantity)}
+                          </p>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <p className="font-medium text-gray-900">
-                          {formatPrice(item.price * item.quantity)}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
                 <div className="border-t border-gray-200 pt-4 space-y-3">
                   <div className="flex justify-between text-sm text-gray-600">

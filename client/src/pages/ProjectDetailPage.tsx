@@ -46,77 +46,31 @@ const ProjectDetailPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState(0);
 
-  // Mock data for development
-  const mockProject: Project = {
-    _id: '1',
-    title: 'Smart Home Automation System',
-    description: 'Complete IoT-based home automation system with mobile app control. This project demonstrates the integration of various smart home technologies including lighting control, temperature monitoring, security systems, and energy management. The system features a user-friendly mobile application that allows homeowners to control and monitor their home environment from anywhere in the world.',
-    shortDescription: 'IoT-based home automation with mobile control',
-    category: 'IoT Projects',
-    domain: 'Electronics&Communications-(ECE)',
-    price: 2999,
-    originalPrice: 3999,
-    discount: 25,
-    rating: 4.8,
-    reviewCount: 127,
-    views: 2150,
-    orders: 89,
-    features: [
-      'Mobile App Control',
-      'Voice Commands',
-      'Energy Monitoring',
-      'Security Features',
-      'Automated Scheduling',
-      'Remote Access',
-      'Real-time Notifications',
-      'Multi-zone Control'
-    ],
-    requirements: [
-      'Basic Electronics Knowledge',
-      'Arduino Programming',
-      'Mobile App Development',
-      'IoT Concepts',
-      'Basic Networking'
-    ],
-    deliverables: [
-      'Complete Source Code',
-      'Circuit Diagrams',
-      'Component List',
-      'Documentation',
-      'Video Tutorial',
-      'Mobile App APK',
-      'Testing Guide',
-      'Installation Manual'
-    ],
-    images: [
-      'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800',
-      'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800',
-      'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800'
-    ],
-    status: 'active',
-    createdAt: '2024-01-15T10:00:00Z',
-    updatedAt: '2024-01-15T10:00:00Z'
-  };
+
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const loadProject = async () => {
       try {
-        // In production, this would be an API call
-        // const response = await axios.get(`/api/projects/${id}`);
-        // setProject(response.data.project);
-        
-        // Using mock data for development
-        setProject(mockProject);
+        setIsLoading(true);
+        setError(null);
+        const response = await fetch(`http://localhost:5001/api/projects/${id}`);
+        if (response.ok) {
+          const data = await response.json();
+          setProject(data.project);
+        } else {
+          setError('Project not found');
+        }
       } catch (error) {
-        console.error('Failed to load project:', error);
-        toast.error('Failed to load project');
-        navigate('/projects');
+        setError('Failed to load project');
       } finally {
         setIsLoading(false);
       }
     };
-
-    loadProject();
+    if (id) {
+      loadProject();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   }, [id, navigate]);
 
   const handleAddToCart = () => {
@@ -172,17 +126,16 @@ const ProjectDetailPage: React.FC = () => {
     );
   }
 
-  if (!project) {
+  if (error || !project) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Project Not Found</h2>
-          <p className="text-gray-600 mb-6">The project you're looking for doesn't exist.</p>
+        <div className="bg-white p-8 rounded-xl shadow text-center">
+          <h2 className="text-2xl font-bold text-red-600 mb-4">{error || 'Project Not Found'}</h2>
           <button
             onClick={() => navigate('/projects')}
-            className="bg-primary-600 hover:bg-primary-700 text-white px-6 py-3 rounded-lg transition-colors"
+            className="mt-4 px-6 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-full font-semibold shadow transition-colors"
           >
-            Browse Projects
+            Back to Projects
           </button>
         </div>
       </div>

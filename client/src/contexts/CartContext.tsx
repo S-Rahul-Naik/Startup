@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
+import { useAuth } from './AuthContext';
 
 // Types
 interface CartItem {
@@ -126,36 +127,56 @@ const calculateCartTotals = (items: CartItem[]): CartState => {
 // Create Context
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
+
 // Provider Component
 export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const { user, isAuthenticated } = useAuth();
   const [state, dispatch] = useReducer(cartReducer, initialState);
   const isFirstLoad = React.useRef(true);
 
-  // Load cart from localStorage on mount
+  // Helper to get cart key
+  const getCartKey = () => {
+    return isAuthenticated && user?._id ? `edutech-cart-${user._id}` : 'edutech-cart-guest';
+  };
+
+  // Load cart from localStorage on mount or when user changes
   useEffect(() => {
-    const savedCart = localStorage.getItem('edutech-cart');
-    console.log('[CartContext] Loaded from localStorage:', savedCart);
+    const cartKey = getCartKey();
+    const savedCart = localStorage.getItem(cartKey);
     if (savedCart) {
       try {
         const parsedCart = JSON.parse(savedCart);
         if (Array.isArray(parsedCart) && parsedCart.length > 0) {
-          console.log('[CartContext] Parsed cart:', parsedCart);
           dispatch({ type: 'LOAD_CART', payload: parsedCart });
+        } else {
+          dispatch({ type: 'LOAD_CART', payload: [] });
         }
       } catch (error) {
-        console.error('[CartContext] Failed to parse saved cart:', error);
-        localStorage.removeItem('edutech-cart');
+        localStorage.removeItem(cartKey);
+        dispatch({ type: 'LOAD_CART', payload: [] });
       }
+    } else {
+      dispatch({ type: 'LOAD_CART', payload: [] });
     }
     isFirstLoad.current = false;
-  }, []);
+  }, [isAuthenticated, user?._id]);
 
   // Save cart to localStorage whenever it changes, but skip first load
   useEffect(() => {
     if (isFirstLoad.current) return;
-    console.log('[CartContext] Saving to localStorage:', state.items);
-    localStorage.setItem('edutech-cart', JSON.stringify(state.items));
-  }, [state.items]);
+    const cartKey = getCartKey();
+    localStorage.setItem(cartKey, JSON.stringify(state.items));
+  }, [state.items, isAuthenticated, user?._id]);
+
+  // Clear cart on logout (when user becomes unauthenticated)
+  useEffect(() => {
+    if (!isAuthenticated) {
+      dispatch({ type: 'CLEAR_CART' });
+    }
+  }, [isAuthenticated]);
+
+
+// (Remove duplicate code: all logic is now inside CartProvider above)
 
   // Add item to cart
   const addToCart = (item: Omit<CartItem, 'quantity'>) => {

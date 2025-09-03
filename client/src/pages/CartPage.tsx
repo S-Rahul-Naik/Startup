@@ -15,29 +15,55 @@ import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';
 
+
 const CartPage: React.FC = () => {
   const { items: cartItems, total, itemCount, removeFromCart, updateQuantity, clearCart } = useCart();
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const [loadingItemId, setLoadingItemId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [showClearModal, setShowClearModal] = useState(false);
 
-  const handleQuantityChange = (itemId: string, newQuantity: number) => {
-    if (newQuantity < 1) {
-      removeFromCart(itemId);
-      toast.success('Item removed from cart');
-    } else {
-      updateQuantity(itemId, newQuantity);
+  const handleQuantityChange = async (itemId: string, newQuantity: number) => {
+    setLoadingItemId(itemId);
+    setError(null);
+    try {
+      if (newQuantity < 1) {
+        await removeFromCart(itemId);
+        toast.success('Item removed from cart');
+      } else {
+        await updateQuantity(itemId, newQuantity);
+      }
+    } catch (err) {
+      setError('Failed to update cart. Please try again.');
+    } finally {
+      setLoadingItemId(null);
     }
   };
 
-  const handleRemoveItem = (itemId: string) => {
-    removeFromCart(itemId);
-    toast.success('Item removed from cart');
+  const handleRemoveItem = async (itemId: string) => {
+    setLoadingItemId(itemId);
+    setError(null);
+    try {
+      await removeFromCart(itemId);
+      toast.success('Item removed from cart');
+    } catch (err) {
+      setError('Failed to remove item. Please try again.');
+    } finally {
+      setLoadingItemId(null);
+    }
   };
 
-  const handleClearCart = () => {
-    clearCart();
-    toast.success('Cart cleared');
+  const handleClearCart = async () => {
+    setError(null);
+    setShowClearModal(false);
+    try {
+      await clearCart();
+      toast.success('Cart cleared');
+    } catch (err) {
+      setError('Failed to clear cart. Please try again.');
+    }
   };
 
   const handleCheckout = () => {
@@ -48,7 +74,6 @@ const CartPage: React.FC = () => {
     }
 
     setIsCheckingOut(true);
-    // In production, this would redirect to checkout/payment page
     setTimeout(() => {
       setIsCheckingOut(false);
       toast.success('Redirecting to checkout...');
@@ -130,8 +155,9 @@ const CartPage: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <h2 className="text-lg font-semibold text-gray-900">Cart Items</h2>
                   <button
-                    onClick={handleClearCart}
+                    onClick={() => setShowClearModal(true)}
                     className="text-sm text-red-600 hover:text-red-700 transition-colors"
+                    aria-label="Clear Cart"
                   >
                     Clear Cart
                   </button>
@@ -149,7 +175,7 @@ const CartPage: React.FC = () => {
                       transition={{ duration: 0.3, delay: index * 0.1 }}
                       className="p-6"
                     >
-                      <div className="flex items-center space-x-4">
+                      <div className="flex items-center space-x-4" aria-live="polite">
                         {/* Item Image */}
                         <div className="flex-shrink-0">
                           <img
@@ -189,8 +215,14 @@ const CartPage: React.FC = () => {
                               <button
                                 onClick={() => handleQuantityChange(item._id, item.quantity - 1)}
                                 className="p-1 rounded-md hover:bg-gray-100 transition-colors"
+                                aria-label="Decrease quantity"
+                                disabled={loadingItemId === item._id}
                               >
-                                <MinusIcon className="w-4 h-4 text-gray-600" />
+                                {loadingItemId === item._id ? (
+                                  <span className="inline-block w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></span>
+                                ) : (
+                                  <MinusIcon className="w-4 h-4 text-gray-600" />
+                                )}
                               </button>
                               <span className="w-12 text-center text-gray-900 font-medium">
                                 {item.quantity}
@@ -198,17 +230,58 @@ const CartPage: React.FC = () => {
                               <button
                                 onClick={() => handleQuantityChange(item._id, item.quantity + 1)}
                                 className="p-1 rounded-md hover:bg-gray-100 transition-colors"
+                                aria-label="Increase quantity"
+                                disabled={loadingItemId === item._id}
                               >
-                                <PlusIcon className="w-4 h-4 text-gray-600" />
+                                {loadingItemId === item._id ? (
+                                  <span className="inline-block w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></span>
+                                ) : (
+                                  <PlusIcon className="w-4 h-4 text-gray-600" />
+                                )}
                               </button>
                             </div>
 
                             <button
                               onClick={() => handleRemoveItem(item._id)}
                               className="text-red-600 hover:text-red-700 transition-colors p-2 hover:bg-red-50 rounded-md"
+                              aria-label="Remove item"
+                              disabled={loadingItemId === item._id}
                             >
-                              <TrashIcon className="w-5 h-5" />
+                              {loadingItemId === item._id ? (
+                                <span className="inline-block w-5 h-5 border-2 border-red-400 border-t-transparent rounded-full animate-spin"></span>
+                              ) : (
+                                <TrashIcon className="w-5 h-5" />
+                              )}
                             </button>
+                {/* Error message */}
+                {error && (
+                  <div className="px-6 py-2 bg-red-100 text-red-700 text-sm rounded-b">
+                    {error}
+                  </div>
+                )}
+      {/* Clear Cart Confirmation Modal */}
+      {showClearModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+          <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-sm">
+            <h3 className="text-lg font-bold mb-2">Clear Cart</h3>
+            <p className="mb-6 text-gray-700">Are you sure you want to remove all items from your cart?</p>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setShowClearModal(false)}
+                className="px-4 py-2 rounded bg-gray-200 text-gray-700 hover:bg-gray-300"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleClearCart}
+                className="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700"
+              >
+                Clear
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
                           </div>
                         </div>
                       </div>
