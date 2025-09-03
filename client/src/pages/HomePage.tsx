@@ -69,7 +69,7 @@ const HomePage: React.FC = () => {
 
   const projectCategories = [
         { name: 'Computer Science', color: 'bg-blue-500', desc: 'Where code meets creativity' },
-    { name: 'AI / ML', color: 'bg-purple-500', desc: 'Intelligence that adapts and evolves' },
+  { name: 'AI/ML', color: 'bg-purple-500', desc: 'Intelligence that adapts and evolves' },
     { name: 'Data Science', color: 'bg-yellow-500', desc: 'Insights that shape tomorrow' },
     { name: 'Electronics & Communication', color: 'bg-red-500', desc: 'Innovating the future of connectivity' },
     { name: 'Electrical Engineering', color: 'bg-indigo-500', desc: 'Smart power, smarter solutions' },

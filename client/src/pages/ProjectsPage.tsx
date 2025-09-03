@@ -124,6 +124,7 @@ const ProjectsPage: React.FC = () => {
       'Embedded Systems',
       'Signal Processing',
       'Communication Systems',
+      'IoT',
       'Others'
     ],
     'Electrical Engineering': [
@@ -313,15 +314,15 @@ const ProjectsPage: React.FC = () => {
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            Explore Academic Projects
-          </h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Discover cutting-edge projects across various engineering domains. 
-            From embedded systems to machine learning, find the perfect project for your academic journey.
-          </p>
+
+        {/* Header/Title Section with background color */}
+        <div className="bg-gradient-to-r from-blue-100 via-purple-100 to-pink-100 py-12 rounded-2xl mb-8">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h1 className="text-4xl md:text-5xl font-extrabold text-center text-gray-900 mb-4">Explore Academic Projects</h1>
+            <p className="text-lg text-center text-gray-600 mb-10">Discover cutting-edge projects across various engineering domains. From embedded systems to machine learning, find the perfect project for your academic journey.</p>
+          </div>
         </div>
+
 
         {/* Search and Filters */}
   <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 mb-8">
@@ -353,7 +354,8 @@ const ProjectsPage: React.FC = () => {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="px-4 py-3 border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent shadow-sm"
+              className="px-5 py-3 border-2 border-primary-400 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 shadow-lg text-base font-semibold text-primary-700 bg-white transition-all duration-200 hover:border-primary-600 active:border-primary-700"
+              style={{ minWidth: '180px' }}
             >
               <option value="newest">Newest First</option>
               <option value="price-low">Price: Low to High</option>
@@ -367,10 +369,11 @@ const ProjectsPage: React.FC = () => {
           <AnimatePresence>
             {showFilters && (
               <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.3 }}
+                initial={{ opacity: 0, maxHeight: 0 }}
+                animate={{ opacity: 1, maxHeight: 600 }}
+                exit={{ opacity: 0, maxHeight: 0 }}
+                transition={{ duration: 0.4, ease: 'easeInOut' }}
+                style={{ overflow: 'hidden' }}
                 className="mt-6 pt-6 border-t border-gray-200"
               >
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

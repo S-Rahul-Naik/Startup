@@ -18,6 +18,44 @@ import {
   EyeIcon,
   CreditCardIcon
 } from '@heroicons/react/24/outline';
+
+
+// ...existing code...
+// ...existing imports...
+
+// Reusable Confirmation Modal (must be after all imports, before component definition)
+const ConfirmModal: React.FC<{
+  open: boolean;
+  title?: string;
+  message: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+}> = ({ open, title, message, onConfirm, onCancel }) => {
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+      <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-sm">
+        {title && <h3 className="text-lg font-bold mb-2">{title}</h3>}
+        <p className="mb-6 text-gray-700">{message}</p>
+        <div className="flex justify-end gap-2">
+          <button
+            onClick={onCancel}
+            className="px-4 py-2 rounded bg-gray-200 text-gray-700 hover:bg-gray-300"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            className="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700"
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // ...existing code...
 // ...existing code...
 
@@ -45,6 +83,10 @@ interface Project {
   };
   isPublished: boolean;
   createdAt: string;
+  abstract?: string;
+  blockDiagram?: string;
+  specifications?: string;
+  learningOutcomes?: string[];
   // ...existing code...
 }
 
@@ -79,6 +121,25 @@ interface Order {
 const AdminDashboardPage: React.FC = () => {
   // All state and handlers go here
   const [activeTab, setActiveTab] = useState('overview');
+  // Form validation state
+  const [formErrors, setFormErrors] = useState<{ [key: string]: string }>({});
+
+  // Form validation function
+  const validateProjectForm = () => {
+    const errors: { [key: string]: string } = {};
+    if (!projectForm.title.trim()) errors.title = 'Title is required.';
+    if (!projectForm.description.trim()) errors.description = 'Description is required.';
+    if (!projectForm.abstract.trim()) errors.abstract = 'Abstract is required.';
+    if (!projectForm.price || isNaN(Number(projectForm.price)) || Number(projectForm.price) <= 0) errors.price = 'Valid price is required.';
+    if (!projectForm.category) errors.category = 'Category is required.';
+    if (!projectForm.domain) errors.domain = 'Domain is required.';
+    if (!projectForm.difficulty) errors.difficulty = 'Difficulty is required.';
+    if (!projectForm.specifications.trim()) errors.specifications = 'Specifications are required.';
+    if (!projectForm.learningOutcomes.trim()) errors.learningOutcomes = 'Learning outcomes are required.';
+    // Optionally: require at least one image or file
+    // if (selectedImages.length === 0 && selectedFiles.length === 0) errors.files = 'At least one image or file is required.';
+    return errors;
+  };
   const [upiId, setUpiId] = useState('');
   const [upiLoading, setUpiLoading] = useState(false);
   const [upiEdit, setUpiEdit] = useState('');
@@ -157,7 +218,11 @@ const AdminDashboardPage: React.FC = () => {
         category: project.category,
         domain: project.domain || '',
         difficulty: project.difficulty || '',
-        isPublished: project.isPublished
+        isPublished: project.isPublished,
+        abstract: project.abstract || '',
+        blockDiagram: null,
+        specifications: project.specifications || '',
+        learningOutcomes: Array.isArray(project.learningOutcomes) ? project.learningOutcomes.join('\n') : (project.learningOutcomes || '')
       });
   // ...existing code...
       setShowAddProject(true); // Open the add/edit modal
@@ -183,10 +248,22 @@ const AdminDashboardPage: React.FC = () => {
     category: '',
     domain: 'Python',
     difficulty: 'Intermediate',
-    isPublished: false
+    isPublished: false,
+    abstract: '',
+  blockDiagram: null as File | null,
+    specifications: '',
+    learningOutcomes: '' // one per line
   });
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+
+  // Per-tab loading and error states
+  const [projectsLoading, setProjectsLoading] = useState(false);
+  const [projectsError, setProjectsError] = useState<string | null>(null);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [usersError, setUsersError] = useState<string | null>(null);
+  const [ordersLoading, setOrdersLoading] = useState(false);
+  const [ordersError, setOrdersError] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
 
   // User Management State
@@ -239,59 +316,77 @@ const AdminDashboardPage: React.FC = () => {
   };
 
   const fetchProjects = async () => {
+    setProjectsLoading(true);
+    setProjectsError(null);
     try {
       const token = localStorage.getItem('token');
-  const response = await fetch('http://localhost:5001/api/admin/projects', {
+      const response = await fetch('http://localhost:5001/api/admin/projects', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
-
       if (response.ok) {
         const data = await response.json();
         setProjects(data.projects || []);
+      } else {
+        setProjectsError('Failed to fetch projects.');
       }
     } catch (error) {
+      setProjectsError('Failed to fetch projects.');
       console.error('Error fetching projects:', error);
+    } finally {
+      setProjectsLoading(false);
     }
   };
 
   const fetchUsers = async () => {
+    setUsersLoading(true);
+    setUsersError(null);
     try {
       const token = localStorage.getItem('token');
-  const response = await fetch('http://localhost:5001/api/admin/users', {
+      const response = await fetch('http://localhost:5001/api/admin/users', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
-
       if (response.ok) {
         const data = await response.json();
         setUsers(data.users || []);
+      } else {
+        setUsersError('Failed to fetch users.');
       }
     } catch (error) {
+      setUsersError('Failed to fetch users.');
       console.error('Error fetching users:', error);
+    } finally {
+      setUsersLoading(false);
     }
   };
 
   const fetchOrders = async () => {
+    setOrdersLoading(true);
+    setOrdersError(null);
     try {
       const token = localStorage.getItem('token');
-  const response = await fetch('http://localhost:5001/api/admin/orders', {
+      const response = await fetch('http://localhost:5001/api/admin/orders', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
-
       if (response.ok) {
         const data = await response.json();
         setOrders(data.orders || []);
+      } else {
+        setOrdersError('Failed to fetch orders.');
       }
     } catch (error) {
+      setOrdersError('Failed to fetch orders.');
       console.error('Error fetching orders:', error);
+    } finally {
+      setOrdersLoading(false);
     }
   };
 
@@ -308,11 +403,15 @@ const AdminDashboardPage: React.FC = () => {
 
   const handleAddProject = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+    setUploadProgress(0);
+    const errors = validateProjectForm();
+    setFormErrors(errors);
+    if (Object.keys(errors).length > 0) {
+      toast.error('Please fix the errors in the form.');
+      return;
+    }
     try {
       const token = localStorage.getItem('token');
-      
-      // Create FormData for file upload
       const formData = new FormData();
       formData.append('title', projectForm.title);
       formData.append('description', projectForm.description);
@@ -321,51 +420,81 @@ const AdminDashboardPage: React.FC = () => {
       formData.append('domain', projectForm.domain);
       formData.append('difficulty', projectForm.difficulty);
       formData.append('isPublished', projectForm.isPublished.toString());
-      
-      // Append images first (they will be treated as display images)
-      selectedImages.forEach((file, index) => {
-        formData.append(`files`, file);
-      });
-      
-      // Append other files
-      selectedFiles.forEach((file, index) => {
-        formData.append(`files`, file);
-      });
-      
-  const response = await fetch('http://localhost:5001/api/admin/projects', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-          // Don't set Content-Type for FormData, let browser set it with boundary
-        },
-        body: formData
-      });
-
-
-      if (response.ok) {
-        setShowAddProject(false);
-        setProjectForm({ title: '', description: '', price: '', category: '', domain: 'Python', difficulty: 'Intermediate', isPublished: false });
-        setSelectedImages([]);
-        setSelectedFiles([]);
-        fetchProjects();
-        alert('Project added successfully!');
-      } else {
-        const errorData = await response.json();
-        alert(`Failed to add project: ${errorData.error || 'Unknown error'}`);
+      formData.append('abstract', projectForm.abstract);
+      if (projectForm.blockDiagram instanceof File) {
+        formData.append('blockDiagram', projectForm.blockDiagram);
       }
+      formData.append('specifications', projectForm.specifications);
+      formData.append('learningOutcomes', projectForm.learningOutcomes);
+      selectedImages.forEach((file) => {
+        formData.append('files', file);
+      });
+      selectedFiles.forEach((file) => {
+        formData.append('files', file);
+      });
+      // Use XMLHttpRequest for upload progress
+      await new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', 'http://localhost:5001/api/admin/projects');
+        xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+        xhr.upload.onprogress = (event) => {
+          if (event.lengthComputable) {
+            setUploadProgress(Math.round((event.loaded / event.total) * 100));
+          }
+        };
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            setShowAddProject(false);
+            setProjectForm({
+              title: '',
+              description: '',
+              price: '',
+              category: '',
+              domain: 'Python',
+              difficulty: 'Intermediate',
+              isPublished: false,
+              abstract: '',
+              blockDiagram: null,
+              specifications: '',
+              learningOutcomes: ''
+            });
+            setSelectedImages([]);
+            setSelectedFiles([]);
+            setFormErrors({});
+            fetchProjects();
+            toast.success('Project added successfully!');
+            setUploadProgress(0);
+            resolve(null);
+          } else {
+            let errorMsg = 'Unknown error';
+            try {
+              errorMsg = JSON.parse(xhr.responseText).error || errorMsg;
+            } catch {}
+            toast.error(`Failed to add project: ${errorMsg}`);
+            setUploadProgress(0);
+            reject(new Error(errorMsg));
+          }
+        };
+        xhr.onerror = () => {
+          toast.error('Failed to add project');
+          setUploadProgress(0);
+          reject(new Error('Network error'));
+        };
+        xhr.send(formData);
+      });
     } catch (error) {
       console.error('Error adding project:', error);
-      alert('Failed to add project');
+      toast.error('Failed to add project');
+      setUploadProgress(0);
     }
   };
 
   const handleUpdateProject = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingProject) return;
-
     try {
       const token = localStorage.getItem('token');
-  const response = await fetch(`http://localhost:5001/api/admin/projects/${editingProject._id}`, {
+      const response = await fetch(`http://localhost:5001/api/admin/projects/${editingProject._id}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -376,46 +505,69 @@ const AdminDashboardPage: React.FC = () => {
           price: parseFloat(projectForm.price)
         })
       });
-
       if (response.ok) {
         setEditingProject(null);
-        setProjectForm({ title: '', description: '', price: '', category: '', domain: 'Python', difficulty: 'Intermediate', isPublished: false });
+        setProjectForm({
+          title: '',
+          description: '',
+          price: '',
+          category: '',
+          domain: 'Python',
+          difficulty: 'Intermediate',
+          isPublished: false,
+          abstract: '',
+          blockDiagram: null,
+          specifications: '',
+          learningOutcomes: ''
+        });
         fetchProjects();
-        alert('Project updated successfully!');
+        toast.success('Project updated successfully!');
+      } else {
+        toast.error('Failed to update project');
       }
     } catch (error) {
       console.error('Error updating project:', error);
-      alert('Failed to update project');
+      toast.error('Failed to update project');
     }
   };
 
-  const handleDeleteProject = async (projectId: string) => {
-    if (!window.confirm('Are you sure you want to delete this project?')) return;
+  // Modal state for project deletion
+  const [deleteModal, setDeleteModal] = useState<{ open: boolean; projectId: string | null }>({ open: false, projectId: null });
 
+  const handleDeleteProject = (projectId: string) => {
+    setDeleteModal({ open: true, projectId });
+  };
+
+  const confirmDeleteProject = async () => {
+    if (!deleteModal.projectId) return;
     try {
       const token = localStorage.getItem('token');
-  const response = await fetch(`http://localhost:5001/api/admin/projects/${projectId}`, {
+      const response = await fetch(`http://localhost:5001/api/admin/projects/${deleteModal.projectId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
-
       if (response.ok) {
         fetchProjects();
-        alert('Project deleted successfully!');
+        toast.success('Project deleted successfully!');
+      } else {
+        toast.error('Failed to delete project');
       }
     } catch (error) {
       console.error('Error deleting project:', error);
-      alert('Failed to delete project');
+      toast.error('Failed to delete project');
+    } finally {
+      setDeleteModal({ open: false, projectId: null });
     }
   };
+
 
   const handleToggleProjectStatus = async (projectId: string, isPublished: boolean) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/admin/projects/${projectId}/toggle-status`, {
+      const response = await fetch(`http://localhost:5001/api/admin/projects/${projectId}/toggle-status`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -423,21 +575,22 @@ const AdminDashboardPage: React.FC = () => {
         },
         body: JSON.stringify({ isPublished: !isPublished })
       });
-
       if (response.ok) {
         fetchProjects();
-        alert(`Project ${!isPublished ? 'published' : 'unpublished'} successfully!`);
+        toast.success(`Project ${!isPublished ? 'published' : 'unpublished'} successfully!`);
+      } else {
+        toast.error('Failed to toggle project status');
       }
     } catch (error) {
       console.error('Error toggling project status:', error);
-      alert('Failed to toggle project status');
+      toast.error('Failed to toggle project status');
     }
   };
 
   const handleUpdateUserRole = async (userId: string, newRole: string) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/admin/users/${userId}/role`, {
+      const response = await fetch(`http://localhost:5001/api/admin/users/${userId}/role`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -445,21 +598,22 @@ const AdminDashboardPage: React.FC = () => {
         },
         body: JSON.stringify({ role: newRole })
       });
-
       if (response.ok) {
         fetchUsers();
-        alert('User role updated successfully!');
+        toast.success('User role updated successfully!');
+      } else {
+        toast.error('Failed to update user role');
       }
     } catch (error) {
       console.error('Error updating user role:', error);
-      alert('Failed to update user role');
+      toast.error('Failed to update user role');
     }
   };
 
   const handleUpdateOrderStatus = async (orderId: string, newStatus: string) => {
     try {
       const token = localStorage.getItem('token');
-  const response = await fetch(`http://localhost:5001/api/orders/${orderId}/status`, {
+      const response = await fetch(`http://localhost:5001/api/orders/${orderId}/status`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -467,23 +621,24 @@ const AdminDashboardPage: React.FC = () => {
         },
         body: JSON.stringify({ status: newStatus })
       });
-
       if (response.ok) {
         fetchOrders();
-        alert('Order status updated successfully!');
+        toast.success('Order status updated successfully!');
+      } else {
+        toast.error('Failed to update order status');
       }
     } catch (error) {
       console.error('Error updating order status:', error);
-      alert('Failed to update order status');
+      toast.error('Failed to update order status');
     }
   };
 
   const handleSaveSettings = async () => {
     try {
       // In a real app, you'd save to backend
-      alert('Settings saved successfully!');
+      toast.success('Settings saved successfully!');
     } catch (error) {
-      alert('Failed to save settings');
+      toast.error('Failed to save settings');
     }
   };
 
@@ -757,8 +912,25 @@ const AdminDashboardPage: React.FC = () => {
                                    category: project.category,
                                    domain: project.domain || 'Python',
                                    difficulty: project.difficulty || 'Intermediate',
-                                   isPublished: project.isPublished
+                                   isPublished: project.isPublished,
+                                   abstract: project.abstract || '',
+                                   blockDiagram: null,
+                                   specifications: project.specifications || '',
+                                   learningOutcomes: Array.isArray(project.learningOutcomes) ? project.learningOutcomes.join('\n') : (project.learningOutcomes || '')
                                  });
+                             setProjectForm({
+                               title: '',
+                               description: '',
+                               price: '',
+                               category: '',
+                               domain: 'Python',
+                               difficulty: 'Intermediate',
+                               isPublished: false,
+                               abstract: '',
+                               blockDiagram: null,
+                               specifications: '',
+                               learningOutcomes: ''
+                             });
                                 }}
                                 className="text-indigo-600 hover:text-indigo-900"
                                 title="Edit Project"
@@ -815,9 +987,10 @@ const AdminDashboardPage: React.FC = () => {
                             onChange={(e) => {
                               setProjectForm({ ...projectForm, title: e.target.value });
                             }}
-                            className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                            className={`mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${formErrors.title ? 'border-red-500' : ''}`}
                             required
                           />
+                          {formErrors.title && <div className="text-red-500 text-xs mt-1">{formErrors.title}</div>}
                         </div>
                         <div>
                           <label className="block text-sm font-medium text-gray-700">Description</label>
@@ -825,10 +998,32 @@ const AdminDashboardPage: React.FC = () => {
                             value={projectForm.description}
                             onChange={(e) => setProjectForm({ ...projectForm, description: e.target.value })}
                             rows={3}
-                            className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                            className={`mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${formErrors.description ? 'border-red-500' : ''}`}
                             required
                           />
+                          {formErrors.description && <div className="text-red-500 text-xs mt-1">{formErrors.description}</div>}
                         </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700">Abstract</label>
+                          <textarea
+                            value={projectForm.abstract}
+                            onChange={(e) => setProjectForm({ ...projectForm, abstract: e.target.value })}
+                            rows={3}
+                            className={`mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${formErrors.abstract ? 'border-red-500' : ''}`}
+                            required
+                          />
+                          {formErrors.abstract && <div className="text-red-500 text-xs mt-1">{formErrors.abstract}</div>}
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700">Block Diagram (Image Upload)</label>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => setProjectForm({ ...projectForm, blockDiagram: e.target.files ? e.target.files[0] : null })}
+                            className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                          />
+                        </div>
+                        {/* Removed duplicate Specifications and Learning Outcomes fields */}
                         <div>
                           <label className="block text-sm font-medium text-gray-700">Price</label>
                           <input
@@ -836,16 +1031,17 @@ const AdminDashboardPage: React.FC = () => {
                             step="0.01"
                             value={projectForm.price}
                             onChange={(e) => setProjectForm({ ...projectForm, price: e.target.value })}
-                            className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                            className={`mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${formErrors.price ? 'border-red-500' : ''}`}
                             required
                           />
+                          {formErrors.price && <div className="text-red-500 text-xs mt-1">{formErrors.price}</div>}
                         </div>
                         <div>
                           <label className="block text-sm font-medium text-gray-700">Category</label>
                           <select
                             value={projectForm.category}
                             onChange={(e) => setProjectForm({ ...projectForm, category: e.target.value })}
-                            className="mt-1 block w-full border-2 border-primary-300 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-base"
+                            className={`mt-1 block w-full border-2 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 text-base ${formErrors.category ? 'border-red-500 border-2' : 'border-primary-300 focus:ring-primary-500 focus:border-primary-500'}`}
                             required
                           >
                             <option value="">All Categories</option>
@@ -856,13 +1052,14 @@ const AdminDashboardPage: React.FC = () => {
                             <option value="AI/ML">AI/ML</option>
                             <option value="Data Science">Data Science</option>
                           </select>
+                          {formErrors.category && <div className="text-red-500 text-xs mt-1">{formErrors.category}</div>}
                         </div>
                         <div>
                           <label className="block text-sm font-medium text-gray-700">Domain</label>
                           <select
                             value={projectForm.domain}
                             onChange={(e) => setProjectForm({ ...projectForm, domain: e.target.value })}
-                            className="mt-1 block w-full border-2 border-primary-300 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-base"
+                            className={`mt-1 block w-full border-2 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 text-base ${formErrors.domain ? 'border-red-500 border-2' : 'border-primary-300 focus:ring-primary-500 focus:border-primary-500'}`}
                             required
                           >
                             {(() => {
@@ -873,6 +1070,7 @@ const AdminDashboardPage: React.FC = () => {
                                   'Embedded Systems',
                                   'Signal Processing',
                                   'Communication Systems',
+                                  'IoT',
                                   'Others'
                                 ],
                                 'Electrical Engineering': [
@@ -926,13 +1124,14 @@ const AdminDashboardPage: React.FC = () => {
                               ));
                             })()}
                           </select>
+                          {formErrors.domain && <div className="text-red-500 text-xs mt-1">{formErrors.domain}</div>}
                         </div>
                         <div>
                           <label className="block text-sm font-medium text-gray-700">Difficulty</label>
                           <select
                             value={projectForm.difficulty}
                             onChange={(e) => setProjectForm({ ...projectForm, difficulty: e.target.value })}
-                            className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                            className={`mt-1 block w-full border-2 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 text-base ${formErrors.difficulty ? 'border-red-500 border-2' : 'border-primary-300 focus:ring-primary-500 focus:border-primary-500'}`}
                             required
                           >
                             <option value="Beginner">Beginner</option>
@@ -940,6 +1139,30 @@ const AdminDashboardPage: React.FC = () => {
                             <option value="Advanced">Advanced</option>
                             <option value="Expert">Expert</option>
                           </select>
+                          {formErrors.difficulty && <div className="text-red-500 text-xs mt-1">{formErrors.difficulty}</div>}
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700">Specifications</label>
+                          <textarea
+                            value={projectForm.specifications}
+                            onChange={(e) => setProjectForm({ ...projectForm, specifications: e.target.value })}
+                            rows={3}
+                            className={`mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${formErrors.specifications ? 'border-red-500' : ''}`}
+                            required
+                          />
+                          {formErrors.specifications && <div className="text-red-500 text-xs mt-1">{formErrors.specifications}</div>}
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700">Learning Outcomes <span className="text-xs text-gray-400">(one per line)</span></label>
+                          <textarea
+                            value={projectForm.learningOutcomes}
+                            onChange={(e) => setProjectForm({ ...projectForm, learningOutcomes: e.target.value })}
+                            rows={4}
+                            className={`mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${formErrors.learningOutcomes ? 'border-red-500' : ''}`}
+                            placeholder="e.g. Learn MATLAB basics\nUnderstand image processing\n..."
+                            required
+                          />
+                          {formErrors.learningOutcomes && <div className="text-red-500 text-xs mt-1">{formErrors.learningOutcomes}</div>}
                         </div>
                                                  <div className="flex items-center">
                            <input
@@ -1095,13 +1318,37 @@ const AdminDashboardPage: React.FC = () => {
                            )}
                          </div>
                       </div>
+                      {/* Upload Progress Bar */}
+                      {uploadProgress > 0 && uploadProgress < 100 && (
+                        <div className="w-full mb-4">
+                          <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-blue-500 transition-all duration-200"
+                              style={{ width: `${uploadProgress}%` }}
+                            ></div>
+                          </div>
+                          <div className="text-xs text-gray-600 mt-1 text-center">Uploading... {uploadProgress}%</div>
+                        </div>
+                      )}
                       <div className="mt-6 flex justify-end space-x-3">
                         <button
                           type="button"
                                                      onClick={() => {
                              setShowAddProject(false);
                              setEditingProject(null);
-                             setProjectForm({ title: '', description: '', price: '', category: '', domain: 'Python', difficulty: 'Intermediate', isPublished: false });
+                             setProjectForm({
+                               title: '',
+                               description: '',
+                               price: '',
+                               category: '',
+                               domain: 'Python',
+                               difficulty: 'Intermediate',
+                               isPublished: false,
+                               abstract: '',
+                               blockDiagram: null,
+                               specifications: '',
+                               learningOutcomes: ''
+                             });
                              setSelectedImages([]);
                              setSelectedFiles([]);
                            }}
@@ -1404,8 +1651,15 @@ const AdminDashboardPage: React.FC = () => {
         </div>
       </main>
 
+      {/* Confirmation Modal for Project Deletion */}
+      <ConfirmModal
+        open={deleteModal.open}
+        title="Delete Project"
+        message="Are you sure you want to delete this project? This action cannot be undone."
+        onConfirm={confirmDeleteProject}
+        onCancel={() => setDeleteModal({ open: false, projectId: null })}
+      />
     </div>
   );
 }
-
 export default AdminDashboardPage;

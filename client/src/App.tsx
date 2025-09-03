@@ -1,7 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Toaster } from 'react-hot-toast';
+import { Toaster, ToastBar, toast } from 'react-hot-toast';
 
 // Context Providers
 import { AuthProvider } from './contexts/AuthContext';
@@ -108,7 +108,7 @@ function App() {
                 </Routes>
               </Layout>
               
-              {/* Toast Notifications */}
+              {/* Toast Notifications with Dismiss Button */}
               <Toaster
                 position="top-right"
                 toastOptions={{
@@ -132,7 +132,33 @@ function App() {
                     },
                   },
                 }}
-              />
+              >
+                {(t) => (
+                  <ToastBar toast={t}>
+                    {({ icon, message }) => (
+                      <>
+                        {icon}
+                        <span style={{ flex: 1, marginLeft: 8 }}>{message}</span>
+                        <button
+                          onClick={() => toast.dismiss(t.id)}
+                          style={{
+                            background: 'transparent',
+                            border: 'none',
+                            color: '#fff',
+                            fontSize: 18,
+                            marginLeft: 12,
+                            cursor: 'pointer',
+                            lineHeight: 1,
+                          }}
+                          aria-label="Dismiss"
+                        >
+                          ×
+                        </button>
+                      </>
+                    )}
+                  </ToastBar>
+                )}
+              </Toaster>
             </div>
           </Router>
         </CartProvider>

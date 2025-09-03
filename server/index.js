@@ -6,7 +6,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const compression = require('compression');
 const morgan = require('morgan');
-const rateLimit = require('express-rate-limit');
+// const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 console.log('SMTP_USER:', process.env.SMTP_USER);
 console.log('SMTP_PASS:', process.env.SMTP_PASS ? '***' : 'NOT SET');
@@ -42,13 +42,7 @@ app.use(helmet({
 }));
 app.use(compression());
 
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
-  message: 'Too many requests from this IP, please try again later.'
-});
-app.use('/api/', limiter);
+// Rate limiting removed
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
@@ -69,6 +63,12 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/edutech',
 
 // Serve uploaded custom request files statically (must be before API and 404 handlers)
 const path = require('path');
+
+
+// Serve uploaded project images (block diagrams) statically
+const projectsUploadsPath = path.join(__dirname, '../uploads/projects');
+console.log('Serving project uploads from:', projectsUploadsPath);
+app.use('/uploads/projects', express.static(projectsUploadsPath));
 
 // Serve uploaded custom request files statically
 const customRequestsPath = path.join(__dirname, '../uploads/custom-requests');
