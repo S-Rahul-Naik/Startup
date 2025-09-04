@@ -461,27 +461,32 @@ router.get('/dashboard', async (req, res) => {
     const totalProjects = await Project.countDocuments();
     const publishedProjects = await Project.countDocuments({ isPublished: true });
     const pendingProjects = await Project.countDocuments({ isPublished: false, isApproved: { $ne: false } });
-    
+
+    // Orders and revenue
+    const orders = await Order.find({ status: { $in: ['paid', 'processing', 'delivered', 'completed'] } });
+    const totalOrders = orders.length;
+    const totalRevenue = orders.reduce((sum, order) => sum + (order.amount || 0), 0);
+
     // Recent activity
     const recentUsers = await User.find()
       .sort({ createdAt: -1 })
       .limit(5)
       .select('firstName lastName email role createdAt');
-    
+
     const recentProjects = await Project.find()
       .sort({ createdAt: -1 })
       .limit(5)
       .populate('creator', 'firstName lastName email')
       .select('title creator createdAt isPublished');
-    
+
     res.json({
       stats: {
         totalUsers,
         totalProjects,
         publishedProjects,
         pendingProjects,
-        totalOrders: 0, // Will be updated when Order model is available
-        totalRevenue: '0.00' // Will be updated when Order model is available
+        totalOrders,
+        totalRevenue: totalRevenue.toLocaleString('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 2 })
       },
       recentActivity: {
         users: recentUsers,
