@@ -38,9 +38,14 @@ const AddProjectPage: React.FC = () => {
 			formData.append('specifications', specifications);
 			formData.append('learningOutcomes', learningOutcomes);
 
+			const token = localStorage.getItem('token');
 			const response = await fetch(`${API_URL}/api/projects`, {
 				method: 'POST',
-				body: formData
+				body: formData,
+				headers: {
+					...(token ? { 'Authorization': `Bearer ${token}` } : {})
+				},
+				credentials: 'include'
 			});
 
 			if (response.ok) {
