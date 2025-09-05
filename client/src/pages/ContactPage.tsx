@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+
 import { motion } from 'framer-motion';
 import { 
   PhoneIcon,
@@ -8,14 +9,12 @@ import {
   ChatBubbleLeftRightIcon
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
+const API_URL = process.env.REACT_APP_API_URL;
 
 // Helper to POST contact form
 async function sendContactForm(data: any) {
   // Use relative path if proxy is set up, otherwise use backend URL for dev
-  const apiUrl =
-    window.location.hostname === 'localhost'
-      ? 'http://localhost:5001/api/contact'
-      : '/api/contact';
+  const apiUrl = `${API_URL}/api/contact`;
   const res = await fetch(apiUrl, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

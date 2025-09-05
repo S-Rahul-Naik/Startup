@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+
 import { useForm } from 'react-hook-form';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
-
+const API_URL = process.env.REACT_APP_API_URL;
 interface ForgotPasswordFormData {
   email: string;
 }
@@ -17,7 +18,7 @@ const ForgotPasswordPage: React.FC = () => {
   const onSubmit = async (data: ForgotPasswordFormData) => {
     setIsSubmitting(true);
     try {
-      await axios.post('/api/auth/forgot-password', { email: data.email });
+  await axios.post(`${API_URL}/api/auth/forgot-password`, { email: data.email });
       setSubmitted(true);
       toast.success('If this email is registered, a reset link has been sent.');
     } catch (error) {

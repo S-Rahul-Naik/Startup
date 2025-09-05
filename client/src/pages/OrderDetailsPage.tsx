@@ -41,6 +41,7 @@ const OrderDetailsPage: React.FC = () => {
   const [notesError, setNotesError] = useState<string | null>(null);
   const [statusUpdating, setStatusUpdating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const API_URL = process.env.REACT_APP_API_URL;
   // Admin status update handler
   const handleStatusUpdate = async (newStatus: string) => {
     if (!order) return;
@@ -48,7 +49,8 @@ const OrderDetailsPage: React.FC = () => {
     setError(null);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:5001/api/orders/${order._id}/status`, {
+
+  const res = await fetch(`${API_URL}/api/orders/${order._id}/status`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -76,8 +78,8 @@ const OrderDetailsPage: React.FC = () => {
         const token = localStorage.getItem('token');
         const isAdminRoute = window.location.pathname.includes('/admin/orders/');
         const endpoint = isAdminRoute
-          ? `http://localhost:5001/api/orders/admin/${orderId}`
-          : `http://localhost:5001/api/orders/${orderId}`;
+          ? `${API_URL}/api/orders/admin/${orderId}`
+          : `${API_URL}/api/orders/${orderId}`;
         const res = await fetch(endpoint, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -113,7 +115,7 @@ const OrderDetailsPage: React.FC = () => {
     setNotesError(null);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:5001/api/orders/${order._id}/admin-notes`, {
+  const res = await fetch(`${API_URL}/api/orders/${order._id}/admin-notes`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -280,7 +282,7 @@ const OrderDetailsPage: React.FC = () => {
         <button
           onClick={async () => {
             const token = localStorage.getItem('token');
-            const res = await fetch(`http://localhost:5001/api/orders/${order._id}/invoice`, {
+        const res = await fetch(`${API_URL}/api/orders/${order._id}/invoice`, {
               headers: { 'Authorization': `Bearer ${token}` }
             });
             if (!res.ok) {

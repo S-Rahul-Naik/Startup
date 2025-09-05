@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useReducer, useEffect, ReactNode, useCallback } from 'react';
 import axios from 'axios';
+const API_URL = process.env.REACT_APP_API_URL;
 
 // Types
 interface User {
@@ -150,7 +151,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (state.token) {
         try {
           dispatch({ type: 'SET_LOADING', payload: true });
-          const response = await axios.get('/api/auth/me');
+          const response = await axios.get(`${API_URL}/api/auth/me`);
           dispatch({
             type: 'AUTH_SUCCESS',
             payload: { user: response.data.user, token: state.token! },
@@ -171,7 +172,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const login = async (email: string, password: string) => {
     try {
       dispatch({ type: 'AUTH_START' });
-      const response = await axios.post('/api/auth/login', { email, password });
+  const response = await axios.post(`${API_URL}/api/auth/login`, { email, password });
       dispatch({
         type: 'AUTH_SUCCESS',
         payload: { user: response.data.user, token: response.data.token },
@@ -187,7 +188,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const register = async (userData: RegisterData) => {
     try {
       dispatch({ type: 'AUTH_START' });
-      const response = await axios.post('/api/auth/register', userData);
+  const response = await axios.post(`${API_URL}/api/auth/register`, userData);
       dispatch({
         type: 'AUTH_SUCCESS',
         payload: { user: response.data.user, token: response.data.token },
@@ -203,7 +204,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const logout = async () => {
     try {
       if (state.token) {
-        await axios.post('/api/auth/logout');
+  await axios.post(`${API_URL}/api/auth/logout`);
       }
     } catch (error) {
       console.error('Logout request failed:', error);
@@ -215,7 +216,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   // Update profile function
   const updateProfile = async (userData: Partial<User>) => {
     try {
-      const response = await axios.put('/api/auth/profile', userData);
+  const response = await axios.put(`${API_URL}/api/auth/profile`, userData);
       dispatch({ type: 'UPDATE_USER', payload: response.data.user });
     } catch (error: any) {
       const errorMessage = error.response?.data?.error || 'Profile update failed';

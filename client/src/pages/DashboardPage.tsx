@@ -12,8 +12,10 @@ import {
 } from '@heroicons/react/24/outline';
 
 import { useAuth } from '../contexts/AuthContext';
+
 import { useCart } from '../contexts/CartContext';
 import { useNavigate } from 'react-router-dom';
+const API_URL = process.env.REACT_APP_API_URL;
 
 const DashboardPage: React.FC = () => {
   const { user } = useAuth();
@@ -30,7 +32,7 @@ const DashboardPage: React.FC = () => {
       setLoadingOrders(true);
       setOrdersError(null);
       try {
-        const res = await fetch('/api/orders/my-orders', {
+  const res = await fetch(`${API_URL}/api/orders/my-orders`, {
           headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         if (!res.ok) throw new Error('Failed to fetch orders');

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -14,6 +15,7 @@ import {
 import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid';
 import { useCart } from '../contexts/CartContext';
 import toast from 'react-hot-toast';
+const API_URL = process.env.REACT_APP_API_URL;
 
 interface Project {
   _id: string;
@@ -54,7 +56,7 @@ const ProjectDetailPage: React.FC = () => {
       try {
         setIsLoading(true);
         setError(null);
-        const response = await fetch(`http://localhost:5001/api/projects/${id}`);
+  const response = await fetch(`${API_URL}/api/projects/${id}`);
         if (response.ok) {
           const data = await response.json();
           setProject(data.project);
