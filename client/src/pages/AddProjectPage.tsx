@@ -1,6 +1,5 @@
 
 import React, { useState } from 'react';
-const API_URL = process.env.REACT_APP_API_URL;
 import toast from 'react-hot-toast';
 
 const AddProjectPage: React.FC = () => {
@@ -38,14 +37,9 @@ const AddProjectPage: React.FC = () => {
 			formData.append('specifications', specifications);
 			formData.append('learningOutcomes', learningOutcomes);
 
-			const token = localStorage.getItem('token');
-			const response = await fetch(`${API_URL}/api/projects`, {
+			const response = await fetch('http://localhost:5001/api/projects', {
 				method: 'POST',
-				body: formData,
-				headers: {
-					...(token ? { 'Authorization': `Bearer ${token}` } : {})
-				},
-				credentials: 'include'
+				body: formData
 			});
 
 			if (response.ok) {
