@@ -1,13 +1,11 @@
 import React, { useState, ChangeEvent } from 'react';
+
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
-
+const API_URL = process.env.REACT_APP_API_URL;
 // Helper to POST custom project form
 async function sendCustomProjectForm(data: Record<string, string>) {
-  const apiUrl =
-    window.location.hostname === 'localhost'
-      ? 'http://localhost:5001/api/contact'
-      : '/api/contact';
+  const apiUrl = `${API_URL}/api/contact`;
   const res = await fetch(apiUrl, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -52,9 +50,7 @@ const CustomProjectForm = () => {
         Array.from(images).forEach((file) => form.append('images', file));
       }
       const apiUrl =
-        window.location.hostname === 'localhost'
-          ? 'http://localhost:5001/api/contact'
-          : '/api/contact';
+  `${API_URL}/api/contact`;
       const res = await fetch(apiUrl, {
         method: 'POST',
         body: form,

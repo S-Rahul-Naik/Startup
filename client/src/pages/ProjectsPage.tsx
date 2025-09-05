@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -12,6 +13,7 @@ import {
 import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid';
 import { useCart } from '../contexts/CartContext';
 import toast from 'react-hot-toast';
+const API_URL = process.env.REACT_APP_API_URL;
 
 interface Project {
   _id: string;
@@ -69,7 +71,7 @@ const ProjectsPage: React.FC = () => {
     try {
       setIsLoading(true);
       console.log('Fetching projects from API...');
-  const response = await fetch('http://localhost:5001/api/projects?t=' + Date.now());
+  const response = await fetch(`${API_URL}/api/projects?t=${Date.now()}`);
       console.log('API Response status:', response.status);
       
              if (response.ok) {
@@ -508,7 +510,7 @@ const ProjectsPage: React.FC = () => {
                     if (imageFiles && imageFiles.length > 0) {
                       return (
                         <img
-                          src={`http://localhost:5001/api/projects/files/${imageFiles[0].filename}`}
+                          src={`${API_URL}/api/projects/files/${imageFiles[0].filename}`}
                           alt={project.title}
                           className="absolute inset-0 w-full h-full object-cover object-center"
                           onError={(e) => {

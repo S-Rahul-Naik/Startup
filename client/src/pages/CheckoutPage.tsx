@@ -11,6 +11,8 @@ import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';
 
+const API_URL = process.env.REACT_APP_API_URL;
+
 const CheckoutPage: React.FC = () => {
   const { items: cartItems, total, clearCart } = useCart();
   const { user } = useAuth();
@@ -38,7 +40,7 @@ const CheckoutPage: React.FC = () => {
   React.useEffect(() => {
     setUpiLoading(true);
     setUpiError(null);
-    fetch('http://localhost:5001/api/upi')
+  fetch(`${API_URL}/api/upi`)
       .then(res => {
         if (!res.ok) throw new Error('Failed to fetch UPI ID');
         return res.json();
@@ -107,7 +109,7 @@ const CheckoutPage: React.FC = () => {
           formData.append(key, value);
         });
         formData.append('receipt', receiptFile!);
-        const response = await fetch('http://localhost:5001/api/orders', {
+        const response = await fetch(`${API_URL}/api/orders`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`
@@ -386,7 +388,7 @@ const CheckoutPage: React.FC = () => {
                     // Robust image logic: backend file, external URL, or placeholder
                     let imageUrl = '';
                     if (item.image && !item.image.startsWith('http') && !item.image.startsWith('/') && /\.(jpg|jpeg|png|gif|webp)$/i.test(item.image)) {
-                      imageUrl = `http://localhost:5001/api/projects/files/${item.image}`;
+                    imageUrl = `${API_URL}/api/projects/files/${item.image}`;
                     } else if (item.image && item.image.startsWith('http')) {
                       imageUrl = item.image;
                     } else if (item.image && item.image.startsWith('/')) {

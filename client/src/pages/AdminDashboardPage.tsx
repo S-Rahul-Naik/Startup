@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useAuth } from '../contexts/AuthContext';
@@ -18,6 +19,7 @@ import {
   EyeIcon,
   CreditCardIcon
 } from '@heroicons/react/24/outline';
+const API_URL = process.env.REACT_APP_API_URL;
 
 
 // ...existing code...
@@ -148,7 +150,7 @@ const AdminDashboardPage: React.FC = () => {
   useEffect(() => {
     if (activeTab === 'payments') {
       setUpiLoading(true);
-      fetch('http://localhost:5001/api/upi')
+      fetch(`${API_URL}/api/upi`)
         .then(res => res.json())
         .then(data => {
           setUpiId(data.upiId || '');
@@ -177,7 +179,7 @@ const AdminDashboardPage: React.FC = () => {
     setUpiLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:5001/api/upi', {
+  const res = await fetch(`${API_URL}/api/upi`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -297,7 +299,7 @@ const AdminDashboardPage: React.FC = () => {
   const fetchDashboardData = async () => {
     try {
       const token = localStorage.getItem('token');
-  const response = await fetch('http://localhost:5001/api/admin/dashboard', {
+  const response = await fetch(`${API_URL}/api/admin/dashboard`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -320,7 +322,7 @@ const AdminDashboardPage: React.FC = () => {
     setProjectsError(null);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5001/api/admin/projects', {
+  const response = await fetch(`${API_URL}/api/admin/projects`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -345,7 +347,7 @@ const AdminDashboardPage: React.FC = () => {
     setUsersError(null);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5001/api/admin/users', {
+  const response = await fetch(`${API_URL}/api/admin/users`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -370,7 +372,7 @@ const AdminDashboardPage: React.FC = () => {
     setOrdersError(null);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5001/api/admin/orders', {
+      const response = await fetch(`${API_URL}/api/admin/orders`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -435,7 +437,7 @@ const AdminDashboardPage: React.FC = () => {
       // Use XMLHttpRequest for upload progress
       await new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
-        xhr.open('POST', 'http://localhost:5001/api/admin/projects');
+    xhr.open('POST', `${API_URL}/api/admin/projects`);
         xhr.setRequestHeader('Authorization', `Bearer ${token}`);
         xhr.upload.onprogress = (event) => {
           if (event.lengthComputable) {
@@ -494,7 +496,7 @@ const AdminDashboardPage: React.FC = () => {
     if (!editingProject) return;
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5001/api/admin/projects/${editingProject._id}`, {
+  const response = await fetch(`${API_URL}/api/admin/projects/${editingProject._id}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -542,7 +544,7 @@ const AdminDashboardPage: React.FC = () => {
     if (!deleteModal.projectId) return;
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5001/api/admin/projects/${deleteModal.projectId}`, {
+  const response = await fetch(`${API_URL}/api/admin/projects/${deleteModal.projectId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -567,7 +569,7 @@ const AdminDashboardPage: React.FC = () => {
   const handleToggleProjectStatus = async (projectId: string, isPublished: boolean) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5001/api/admin/projects/${projectId}/toggle-status`, {
+  const response = await fetch(`${API_URL}/api/admin/projects/${projectId}/toggle-status`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -590,7 +592,7 @@ const AdminDashboardPage: React.FC = () => {
   const handleUpdateUserRole = async (userId: string, newRole: string) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5001/api/admin/users/${userId}/role`, {
+  const response = await fetch(`${API_URL}/api/admin/users/${userId}/role`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -613,7 +615,7 @@ const AdminDashboardPage: React.FC = () => {
   const handleUpdateOrderStatus = async (orderId: string, newStatus: string) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5001/api/orders/${orderId}/status`, {
+  const response = await fetch(`${API_URL}/api/orders/${orderId}/status`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,

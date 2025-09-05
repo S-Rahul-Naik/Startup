@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeftIcon, ShoppingCartIcon } from '@heroicons/react/24/outline';
 import { useCart } from '../contexts/CartContext';
 import toast from 'react-hot-toast';
+const API_URL = process.env.REACT_APP_API_URL;
 
 
 const ProjectDetailsPage: React.FC = () => {
@@ -25,7 +26,7 @@ const ProjectDetailsPage: React.FC = () => {
   useEffect(() => {
     const fetchProject = async () => {
       try {
-        const response = await fetch(`http://localhost:5001/api/projects/${id}`);
+        const response = await fetch(`${API_URL}/api/projects/${id}`);
         if (response.ok) {
           const data = await response.json();
           setProject(data.project);
@@ -179,7 +180,7 @@ const ProjectDetailsPage: React.FC = () => {
                   {project.files.map((file: any, index: number) => (
                     <li key={index} className="flex items-center gap-2">
                       <a
-                        href={file.path?.startsWith('http') ? file.path : `http://localhost:5001/api/projects/files/${file.filename}`}
+                  href={file.path?.startsWith('http') ? file.path : `${API_URL}/api/projects/files/${file.filename}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-primary-600 hover:underline"
