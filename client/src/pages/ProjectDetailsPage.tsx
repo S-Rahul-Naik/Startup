@@ -136,7 +136,7 @@ const ProjectDetailsPage: React.FC = () => {
               <h3 className="text-xl font-semibold mb-2">Block Diagram</h3>
               {project.blockDiagram ? (
                 <img
-                  src={project.blockDiagram.startsWith('http') ? project.blockDiagram : `${project.blockDiagram}`}
+                  src={project.blockDiagram.startsWith('http') ? project.blockDiagram : `${API_URL}${project.blockDiagram}`}
                   alt="Block Diagram"
                   className="max-w-full h-auto rounded shadow border"
                   onError={e => { e.currentTarget.style.display = 'none'; }}
