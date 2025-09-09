@@ -19,18 +19,21 @@ const Header: React.FC = () => {
   const userMenuRef = useRef<HTMLDivElement>(null);
   // Close dropdown on outside click
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent | TouchEvent) {
+    function handleClickOutside(event: MouseEvent) {
       if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
         setIsUserMenuOpen(false);
+        setUserMenuClicked(false);
       }
     }
-    document.addEventListener('mousedown', handleClickOutside);
-    document.addEventListener('touchstart', handleClickOutside);
+    if (isUserMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    } else {
+      document.removeEventListener('mousedown', handleClickOutside);
+    }
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('touchstart', handleClickOutside);
     };
-  }, []);
+  }, [isUserMenuOpen]);
   const location = useLocation();
   const { user, logout } = useAuth();
   const { items: cartItems } = useCart();
@@ -68,7 +71,7 @@ const Header: React.FC = () => {
   };
 
   return (
-  <header className="bg-white shadow-soft sticky top-0 z-50 w-full overflow-x-hidden">
+  <header className="bg-white shadow-soft sticky top-0 z-40 w-full">
       <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 w-full">
         <div className="flex justify-between items-center h-16 w-full min-w-0 flex-wrap">
           {/* Logo */}
@@ -108,7 +111,7 @@ const Header: React.FC = () => {
                 Categories
                 <ChevronDownIcon className="w-4 h-4 ml-1" />
               </button>
-              <div className="absolute top-full left-0 w-56 max-w-xs bg-white shadow-large rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform translate-y-2 group-hover:translate-y-0 overflow-x-auto">
+              <div className="absolute top-full left-1/2 -translate-x-1/2 w-56 max-w-xs bg-white shadow-large rounded-lg z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform translate-y-2 group-hover:translate-y-0 overflow-x-auto">
                 <div className="py-2">
                   {projectCategories.map((category) => (
                     <Link
@@ -144,9 +147,11 @@ const Header: React.FC = () => {
               <div
                 className="relative"
                 ref={userMenuRef}
+                onMouseEnter={() => { setIsUserMenuOpen(true); }}
+                onMouseLeave={() => { if (!userMenuClicked) setIsUserMenuOpen(false); }}
               >
                 <button
-                  onClick={() => setIsUserMenuOpen((open) => !open)}
+                  onClick={() => { setIsUserMenuOpen(true); setUserMenuClicked(!userMenuClicked); }}
                   className="flex items-center space-x-2 p-2 rounded-md text-gray-700 hover:text-primary-600 hover:bg-primary-50 transition-colors"
                   aria-haspopup="true"
                   aria-expanded={isUserMenuOpen}
