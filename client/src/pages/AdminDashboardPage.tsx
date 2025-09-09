@@ -685,7 +685,7 @@ const AdminDashboardPage: React.FC = () => {
       {/* Navigation Tabs */}
       <nav className="bg-white border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex space-x-8">
+          <div className="flex space-x-4 sm:space-x-8 flex-nowrap overflow-x-auto w-full scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
             {[
               { id: 'overview', name: 'Overview', icon: ChartBarIcon },
               { id: 'projects', name: 'Projects', icon: FolderIcon },
