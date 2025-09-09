@@ -19,21 +19,18 @@ const Header: React.FC = () => {
   const userMenuRef = useRef<HTMLDivElement>(null);
   // Close dropdown on outside click
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
+    function handleClickOutside(event: MouseEvent | TouchEvent) {
       if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
         setIsUserMenuOpen(false);
-        setUserMenuClicked(false);
       }
     }
-    if (isUserMenuOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    } else {
-      document.removeEventListener('mousedown', handleClickOutside);
-    }
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
     };
-  }, [isUserMenuOpen]);
+  }, []);
   const location = useLocation();
   const { user, logout } = useAuth();
   const { items: cartItems } = useCart();
@@ -149,7 +146,7 @@ const Header: React.FC = () => {
                 ref={userMenuRef}
               >
                 <button
-                  onClick={() => { setIsUserMenuOpen((open) => !open); setUserMenuClicked(false); }}
+                  onClick={() => setIsUserMenuOpen((open) => !open)}
                   className="flex items-center space-x-2 p-2 rounded-md text-gray-700 hover:text-primary-600 hover:bg-primary-50 transition-colors"
                   aria-haspopup="true"
                   aria-expanded={isUserMenuOpen}
