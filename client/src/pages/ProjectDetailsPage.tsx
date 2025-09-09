@@ -70,8 +70,8 @@ const ProjectDetailsPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 w-full">
-      <div className="max-w-7xl mx-auto px-2 sm:px-4 w-full">
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-7xl mx-auto px-4">
         <button
           onClick={() => navigate('/projects')}
           className="flex items-center text-gray-600 hover:text-gray-900 mb-6"
@@ -80,7 +80,7 @@ const ProjectDetailsPage: React.FC = () => {
           Back to Projects
         </button>
 
-        <div className="bg-white rounded-lg shadow w-full max-w-md mx-auto p-4 sm:p-8">
+        <div className="bg-white rounded-lg shadow p-8">
           <h1 className="text-3xl font-bold mb-4">{project.title}</h1>
           <p className="text-gray-700 mb-6">{project.description}</p>
           <div className="flex items-center gap-4 mb-6">
