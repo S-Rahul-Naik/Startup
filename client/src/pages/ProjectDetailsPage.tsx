@@ -107,7 +107,7 @@ const ProjectDetailsPage: React.FC = () => {
 
           {/* Tabs */}
           <div className="border-b border-gray-200 mb-6">
-            <nav className="-mb-px flex space-x-8" aria-label="Tabs">
+            <nav className="-mb-px flex space-x-4 sm:space-x-8 flex-nowrap overflow-x-auto w-full scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100" aria-label="Tabs">
               {tabList.map(tab => (
                 <button
                   key={tab.key}
