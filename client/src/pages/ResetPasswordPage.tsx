@@ -4,7 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { FiEye, FiEyeOff, FiLock } from 'react-icons/fi';
-
+const API_URL = process.env.REACT_APP_API_URL;
 const ResetPasswordPage: React.FC = () => {
   const { token } = useParams<{ token: string }>();
   const navigate = useNavigate();
@@ -23,7 +23,7 @@ const ResetPasswordPage: React.FC = () => {
     }
     setIsSubmitting(true);
     try {
-      await axios.post(`/api/auth/reset-password/${token}`, { password });
+  await axios.post(`${API_URL}/api/auth/reset-password/${token}`, { password });
       setSuccess(true);
       toast.success('Password reset successful!');
       setTimeout(() => navigate('/login'), 2000);
