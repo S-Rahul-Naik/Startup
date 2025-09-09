@@ -147,11 +147,9 @@ const Header: React.FC = () => {
               <div
                 className="relative"
                 ref={userMenuRef}
-                onMouseEnter={() => { setIsUserMenuOpen(true); }}
-                onMouseLeave={() => { if (!userMenuClicked) setIsUserMenuOpen(false); }}
               >
                 <button
-                  onClick={() => { setIsUserMenuOpen(true); setUserMenuClicked(!userMenuClicked); }}
+                  onClick={() => { setIsUserMenuOpen((open) => !open); setUserMenuClicked(false); }}
                   className="flex items-center space-x-2 p-2 rounded-md text-gray-700 hover:text-primary-600 hover:bg-primary-50 transition-colors"
                   aria-haspopup="true"
                   aria-expanded={isUserMenuOpen}
