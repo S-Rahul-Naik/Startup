@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const { sendEmail } = require('../utils/email');
-const upload = require('../middleware/customUpload');
-router.post('/', upload.fields([
+const { handleUploads } = require('../middleware/customUpload');
+router.post('/', handleUploads([
   { name: 'documents', maxCount: 10 },
   { name: 'images', maxCount: 10 }
 ]), async (req, res) => {
@@ -11,8 +11,8 @@ router.post('/', upload.fields([
     return res.status(400).json({ error: 'Please fill all required fields.' });
   }
   // Attachments info (filenames and download links)
-  const docFiles = (req.files && req.files['documents']) ? req.files['documents'].map(f => ({ filename: f.filename, url: `${process.env.SERVER_URL || 'http://localhost:5000'}/uploads/custom-requests/${f.filename}` })) : [];
-  const imgFiles = (req.files && req.files['images']) ? req.files['images'].map(f => ({ filename: f.filename, url: `${process.env.SERVER_URL || 'http://localhost:5000'}/uploads/custom-requests/${f.filename}` })) : [];
+  const docFiles = (req.uploads && req.uploads['documents']) ? req.uploads['documents'].map(f => ({ filename: f.public_id, url: f.url })) : [];
+  const imgFiles = (req.uploads && req.uploads['images']) ? req.uploads['images'].map(f => ({ filename: f.public_id, url: f.url })) : [];
   try {
     await sendEmail({
       email: process.env.CONTACT_RECEIVER_EMAIL || 'edutech956@gmail.com',

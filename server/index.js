@@ -28,8 +28,8 @@ const upiRoutes = require('./routes/upi');
 app.use(cors({
   origin: process.env.NODE_ENV === 'production'
     ? [
-        'https://edutech-2025.netlify.app',
-        'https://edutech-2k25.netlify.app'
+        'https://edutech-2k25.netlify.app',
+        'https://edutech-2k25.onrender.com'
       ]
     : ['http://localhost:3000'],
   credentials: true,

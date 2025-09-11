@@ -2,8 +2,10 @@ const express = require('express');
 const router = express.Router();
 const path = require('path');
 const fs = require('fs');
+
 const Project = require('../models/Project');
 const { auth } = require('../middleware/auth');
+const { handleUploads } = require('../middleware/customUpload');
 
 // Get all projects (public)
 router.get('/', async (req, res) => {
@@ -77,15 +79,30 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// Create new project (authenticated users)
-router.post('/', auth, async (req, res) => {
+// Create new project (authenticated users, with image and document upload)
+router.post('/', auth, handleUploads([
+  { name: 'images', maxCount: 10 },
+  { name: 'documents', maxCount: 10 }
+]), async (req, res) => {
   try {
-    const { title, description, price, category, tags, features, images } = req.body;
-    
+    const { title, description, price, category, tags, features } = req.body;
     if (!title || !description || !price) {
       return res.status(400).json({ error: 'Title, description, and price are required' });
     }
-    
+    // Collect image URLs from Cloudinary uploads
+    let imageUrls = [];
+    if (req.uploads && req.uploads['images']) {
+      imageUrls = req.uploads['images'].map(f => f.url);
+    } else if (req.body.images) {
+      imageUrls = Array.isArray(req.body.images) ? req.body.images : [req.body.images];
+    }
+    // Collect document URLs from Cloudinary uploads
+    let documentUrls = [];
+    if (req.uploads && req.uploads['documents']) {
+      documentUrls = req.uploads['documents'].map(f => f.url);
+    } else if (req.body.documents) {
+      documentUrls = Array.isArray(req.body.documents) ? req.body.documents : [req.body.documents];
+    }
     const project = new Project({
       title,
       description,
@@ -93,13 +110,12 @@ router.post('/', auth, async (req, res) => {
       category,
       tags: tags || [],
       features: features || [],
-      images: images || [],
+      images: imageUrls,
+      documents: documentUrls,
       creator: req.user.id,
-      isPublished: false // Default to unpublished
+      isPublished: false
     });
-    
     await project.save();
-    
     res.status(201).json(project);
   } catch (error) {
     console.error('Error creating project:', error);
@@ -107,26 +123,41 @@ router.post('/', auth, async (req, res) => {
   }
 });
 
-// Update project (creator or admin only)
-router.put('/:id', auth, async (req, res) => {
+// Update project (creator or admin only, with image and document upload)
+router.put('/:id', auth, handleUploads([
+  { name: 'images', maxCount: 10 },
+  { name: 'documents', maxCount: 10 }
+]), async (req, res) => {
   try {
     const project = await Project.findById(req.params.id);
-    
     if (!project) {
       return res.status(404).json({ error: 'Project not found' });
     }
-    
     // Check if user is creator or admin
     if (project.creator.toString() !== req.user.id && req.user.role !== 'admin') {
       return res.status(403).json({ error: 'Not authorized to update this project' });
     }
-    
+    // If new images uploaded, append to or replace images array
+    let imageUrls = project.images || [];
+    if (req.uploads && req.uploads['images']) {
+      imageUrls = imageUrls.concat(req.uploads['images'].map(f => f.url));
+    } else if (req.body.images) {
+      imageUrls = Array.isArray(req.body.images) ? req.body.images : [req.body.images];
+    }
+    // If new documents uploaded, append to or replace documents array
+    let documentUrls = project.documents || [];
+    if (req.uploads && req.uploads['documents']) {
+      documentUrls = documentUrls.concat(req.uploads['documents'].map(f => f.url));
+    } else if (req.body.documents) {
+      documentUrls = Array.isArray(req.body.documents) ? req.body.documents : [req.body.documents];
+    }
+    // Update project fields
+    const updateFields = { ...req.body, images: imageUrls, documents: documentUrls };
     const updatedProject = await Project.findByIdAndUpdate(
       req.params.id,
-      req.body,
+      updateFields,
       { new: true, runValidators: true }
     );
-    
     res.json(updatedProject);
   } catch (error) {
     console.error('Error updating project:', error);
@@ -184,11 +215,11 @@ router.patch('/:id/publish', auth, async (req, res) => {
   }
 });
 
-// Handle CORS preflight for file routes
+// Handle CORS preflight for file routes (align with global CORS)
 router.options('/files/:filename', (req, res) => {
-  res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000');
+  res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   res.status(200).end();
 });
 
@@ -210,13 +241,13 @@ router.get('/files/:filename', (req, res) => {
       res.setHeader('Content-Type', 'application/octet-stream');
     }
     
-    res.sendFile(filepath);
+    return res.sendFile(filepath);
   } else {
-    console.log(`File not found: ${filepath}`);
-    res.status(404).json({ 
+    // If using Cloudinary, files will be remote; provide hint
+    return res.status(404).json({ 
       error: 'File not found',
-      message: 'The requested file does not exist on the server.',
-      filename: filename
+      message: 'The requested file is not on local storage. If you recently migrated to Cloudinary, use the stored image URLs from the project document.',
+      filename
     });
   }
 });

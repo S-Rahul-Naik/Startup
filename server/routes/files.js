@@ -1,73 +1,60 @@
 const express = require('express');
 const router = express.Router();
-const multer = require('multer');
 const path = require('path');
-const fs = require('fs').promises;
+const fsp = require('fs').promises;
+const fs = require('fs');
 const { auth } = require('../middleware/auth');
+const { upload: multerUpload } = require('../middleware/customUpload');
+const cloudinary = require('../utils/cloudinary');
 
-// Configure multer for file uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const uploadDir = 'uploads/';
-    // Create uploads directory if it doesn't exist
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    // Generate unique filename
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
-
-// File filter
-const fileFilter = (req, file, cb) => {
-  // Allow images, documents, and archives
-  const allowedTypes = [
-    'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp',
-    'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    'application/zip', 'application/x-rar-compressed', 'application/x-7z-compressed'
-  ];
-  
-  if (allowedTypes.includes(file.mimetype)) {
-    cb(null, true);
-  } else {
-    cb(new Error('Invalid file type. Only images, documents, and archives are allowed.'), false);
-  }
-};
-
-const upload = multer({
-  storage: storage,
-  fileFilter: fileFilter,
-  limits: {
-    fileSize: 10 * 1024 * 1024, // 10MB limit
-    files: 5 // Maximum 5 files per request
-  }
-});
+// File filter (kept for safety, applied via Cloudinary resource type selection)
+const allowedTypes = new Set([
+  'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp',
+  'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/zip', 'application/x-rar-compressed', 'application/x-7z-compressed'
+]);
 
 // Upload files (authenticated users)
-router.post('/upload', auth, upload.array('files', 5), async (req, res) => {
+router.post('/upload', auth, multerUpload.array('files', 5), async (req, res) => {
   try {
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({ error: 'No files uploaded' });
     }
-    
-    const uploadedFiles = req.files.map(file => ({
-      originalName: file.originalname,
-      filename: file.filename,
-      path: file.path,
-      size: file.size,
-      mimetype: file.mimetype,
-      uploadedBy: req.user.id,
-      uploadedAt: new Date()
-    }));
-    
+    // Validate mime types
+    for (const f of req.files) {
+      if (!allowedTypes.has(f.mimetype)) {
+        return res.status(400).json({ error: `Invalid file type: ${f.mimetype}` });
+      }
+    }
+    // Upload each file buffer to Cloudinary under 'uploads'
+    const results = [];
+    const streamifier = require('streamifier');
+    for (const file of req.files) {
+      const resourceType = file.mimetype.startsWith('image/') ? 'image' : 'raw';
+      const folder = 'uploads';
+      const public_id = `${Date.now()}-${Math.round(Math.random()*1e9)}`;
+      const resUpload = await new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream({
+          folder, resource_type: resourceType, public_id, overwrite: false
+        }, (err, result) => err ? reject(err) : resolve(result));
+        streamifier.createReadStream(file.buffer).pipe(stream);
+      });
+      results.push({
+        originalName: file.originalname,
+        url: resUpload.secure_url,
+        public_id: resUpload.public_id,
+        resource_type: resUpload.resource_type,
+        bytes: resUpload.bytes,
+        format: resUpload.format,
+        uploadedBy: req.user.id,
+        uploadedAt: new Date()
+      });
+    }
+
     res.json({
-      message: `${uploadedFiles.length} file(s) uploaded successfully`,
-      files: uploadedFiles
+      message: `${results.length} file(s) uploaded successfully`,
+      files: results
     });
   } catch (error) {
     console.error('Error uploading files:', error);
@@ -79,17 +66,17 @@ router.post('/upload', auth, upload.array('files', 5), async (req, res) => {
 router.get('/:filename', auth, async (req, res) => {
   try {
     const filename = req.params.filename;
-    const filePath = path.join('uploads', filename);
+  const filePath = path.join('uploads', filename);
     
     // Check if file exists
     try {
-      await fs.access(filePath);
+  await fsp.access(filePath);
     } catch (error) {
       return res.status(404).json({ error: 'File not found' });
     }
     
     // Get file stats
-    const stats = await fs.stat(filePath);
+  const stats = await fsp.stat(filePath);
     
     res.json({
       filename,
@@ -125,7 +112,7 @@ router.get('/download/:filename', auth, async (req, res) => {
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
     
     // Stream the file
-    const fileStream = require('fs').createReadStream(filePath);
+  const fileStream = fs.createReadStream(filePath);
     fileStream.pipe(res);
   } catch (error) {
     console.error('Error downloading file:', error);
