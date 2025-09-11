@@ -7,9 +7,13 @@ const helmet = require('helmet');
 const compression = require('compression');
 const morgan = require('morgan');
 // const rateLimit = require('express-rate-limit');
+
 require('dotenv').config();
 console.log('SMTP_USER:', process.env.SMTP_USER);
 console.log('SMTP_PASS:', process.env.SMTP_PASS ? '***' : 'NOT SET');
+console.log('CLOUDINARY_CLOUD_NAME:', process.env.CLOUDINARY_CLOUD_NAME);
+console.log('CLOUDINARY_API_KEY:', process.env.CLOUDINARY_API_KEY);
+console.log('CLOUDINARY_API_SECRET:', process.env.CLOUDINARY_API_SECRET ? '***' : 'NOT SET');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
