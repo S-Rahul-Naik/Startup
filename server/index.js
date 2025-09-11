@@ -26,13 +26,15 @@ const upiRoutes = require('./routes/upi');
 
 // CORS configuration (MUST come before helmet to work properly)
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? ['https://edutech-2025.netlify.app'] 
+  origin: process.env.NODE_ENV === 'production'
+    ? [
+        'https://edutech-2025.netlify.app',
+        'https://edutech-2k25.netlify.app'
+      ]
     : ['http://localhost:3000'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'
-  ]
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
 
 // Security middleware
