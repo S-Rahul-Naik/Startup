@@ -263,14 +263,11 @@ router.get('/:id', auth, async (req, res) => {
 });
 
 // Create new order (authenticated users, UPI only, with receipt upload and full address)
-const multer = require('multer');
-const path = require('path');
-const upload = multer({
-  dest: path.join(__dirname, '../../uploads/receipts'),
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB max
-});
 
-router.post('/', auth, upload.single('receipt'), async (req, res) => {
+const { handleUploads } = require('../middleware/customUpload');
+
+// Accepts 'receipt' as a file (image/pdf), stores in Cloudinary, saves URL in order
+router.post('/', auth, handleUploads([{ name: 'receipt', maxCount: 1 }]), async (req, res) => {
   try {
     console.log('REQ.BODY:', req.body);
     const { projectId, paymentMethod } = req.body;
@@ -317,12 +314,12 @@ router.post('/', auth, upload.single('receipt'), async (req, res) => {
       }
     }
 
-    // Handle receipt file
-    let receiptPath = '';
+    // Handle receipt file (Cloudinary)
+    let receiptUrl = '';
     let receiptOriginalName = '';
-    if (req.file) {
-      receiptPath = `/uploads/receipts/${req.file.filename}`;
-      receiptOriginalName = req.file.originalname;
+    if (req.uploads && req.uploads.receipt && req.uploads.receipt.length > 0) {
+      receiptUrl = req.uploads.receipt[0].url;
+      receiptOriginalName = req.uploads.receipt[0].originalname || '';
     } else {
       return res.status(400).json({ message: 'Payment receipt is required' });
     }
@@ -333,7 +330,7 @@ router.post('/', auth, upload.single('receipt'), async (req, res) => {
       amount: project.price,
       paymentMethod: 'upi',
       billingAddress: deliveryAddress,
-      receipt: receiptPath,
+      receipt: receiptUrl,
       receiptOriginalName: receiptOriginalName,
       status: 'pending'
     });
@@ -342,7 +339,39 @@ router.post('/', auth, upload.single('receipt'), async (req, res) => {
     res.status(201).json(order);
 
     // Send order confirmation email with professional styling
-  const receiptUrl = req.file ? `${process.env.BACKEND_URL || 'http://localhost:5001'}/download/receipts/${req.file.filename}` : '';
+    try {
+      await sendEmail({
+        email: deliveryAddress.email,
+        subject: 'Order Confirmation - Edu Tech',
+        html: `
+          <div style="max-width:480px;margin:40px auto;background:#fff;border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,0.08);padding:32px 24px;font-family:'Segoe UI',Arial,sans-serif;">
+            <div style="text-align:center;margin-bottom:24px;">
+              <div style="display:inline-block;background:#e6f9ec;border-radius:50%;padding:16px;margin-bottom:8px;">
+                <span style="font-size:32px;color:#22c55e;">&#10003;</span>
+              </div>
+              <h2 style="margin:0;font-size:1.5rem;color:#222;font-weight:600;">Payment Successful!</h2>
+              <p style="color:#666;margin:8px 0 0 0;">We have received your order and payment receipt.</p>
+            </div>
+            <div style="background:#f7f7fa;border-radius:12px;padding:20px 16px;margin-bottom:24px;">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+                <span style="font-weight:600;">Project:</span> <span>${project.title}</span>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+                <span style="font-weight:600;">Amount:</span> <span>Rs. ${project.price}</span>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;">
+                <span style="font-weight:600;">Order ID:</span> <span>${order._id}</span>
+              </div>
+            </div>
+            <div style="text-align:center;">
+              <a href="${receiptUrl}" style="display:inline-block;padding:10px 24px;background:#22c55e;color:#fff;border-radius:8px;text-decoration:none;font-weight:600;">View Receipt</a>
+            </div>
+          </div>
+        `
+      });
+    } catch (e) {
+      console.error('Failed to send order confirmation email:', e);
+    }
     try {
       await sendEmail({
         email: deliveryAddress.email,

@@ -146,40 +146,29 @@ router.delete('/:filename', auth, async (req, res) => {
   }
 });
 
-// Get all files (admin only)
+// Get all files (admin only, Cloudinary URLs from all projects)
+const Project = require('../models/Project');
 router.get('/admin/all', auth, async (req, res) => {
   try {
     if (req.user.role !== 'admin') {
       return res.status(403).json({ error: 'Admin access required' });
     }
-    
-    const uploadsDir = 'uploads/';
-    
-    try {
-      await fs.access(uploadsDir);
-    } catch (error) {
-      return res.json({ files: [] });
+    // Aggregate all files from all projects
+    const projects = await Project.find({}, 'title files');
+    let allFiles = [];
+    for (const project of projects) {
+      if (Array.isArray(project.files)) {
+        allFiles = allFiles.concat(project.files.map(f => ({
+          project: project.title,
+          filename: f.filename,
+          originalname: f.originalname,
+          url: f.path,
+          mimetype: f.mimetype,
+          size: f.size
+        })));
+      }
     }
-    
-    const files = await fs.readdir(uploadsDir);
-    const fileStats = await Promise.all(
-      files.map(async (filename) => {
-        try {
-          const filePath = path.join(uploadsDir, filename);
-          const stats = await fs.stat(filePath);
-          return {
-            filename,
-            size: stats.size,
-            createdAt: stats.birthtime,
-            modifiedAt: stats.mtime
-          };
-        } catch (error) {
-          return { filename, error: 'Unable to read file stats' };
-        }
-      })
-    );
-    
-    res.json({ files: fileStats });
+    res.json({ files: allFiles });
   } catch (error) {
     console.error('Error getting all files:', error);
     res.status(500).json({ error: 'Failed to get files' });

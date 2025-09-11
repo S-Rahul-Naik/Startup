@@ -79,10 +79,12 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// Create new project (authenticated users, with image and document upload)
+// Create new project (authenticated users, with image, document, blockDiagram, and files upload)
 router.post('/', auth, handleUploads([
   { name: 'images', maxCount: 10 },
-  { name: 'documents', maxCount: 10 }
+  { name: 'documents', maxCount: 10 },
+  { name: 'blockDiagram', maxCount: 1 },
+  { name: 'files', maxCount: 10 }
 ]), async (req, res) => {
   try {
     const { title, description, price, category, tags, features } = req.body;
@@ -103,6 +105,22 @@ router.post('/', auth, handleUploads([
     } else if (req.body.documents) {
       documentUrls = Array.isArray(req.body.documents) ? req.body.documents : [req.body.documents];
     }
+    // Handle blockDiagram upload (single file, store Cloudinary URL)
+    let blockDiagramUrl = req.body.blockDiagram || '';
+    if (req.uploads && req.uploads['blockDiagram'] && req.uploads['blockDiagram'][0]) {
+      blockDiagramUrl = req.uploads['blockDiagram'][0].url;
+    }
+    // Handle files[] upload (store Cloudinary URLs and metadata)
+    let filesArr = [];
+    if (req.uploads && req.uploads['files']) {
+      filesArr = req.uploads['files'].map(f => ({
+        filename: f.public_id,
+        originalname: f.public_id,
+        path: f.url,
+        mimetype: f.format,
+        size: f.bytes
+      }));
+    }
     const project = new Project({
       title,
       description,
@@ -112,6 +130,8 @@ router.post('/', auth, handleUploads([
       features: features || [],
       images: imageUrls,
       documents: documentUrls,
+      blockDiagram: blockDiagramUrl,
+      files: filesArr,
       creator: req.user.id,
       isPublished: false
     });
@@ -123,10 +143,12 @@ router.post('/', auth, handleUploads([
   }
 });
 
-// Update project (creator or admin only, with image and document upload)
+// Update project (creator or admin only, with image, document, blockDiagram, and files upload)
 router.put('/:id', auth, handleUploads([
   { name: 'images', maxCount: 10 },
-  { name: 'documents', maxCount: 10 }
+  { name: 'documents', maxCount: 10 },
+  { name: 'blockDiagram', maxCount: 1 },
+  { name: 'files', maxCount: 10 }
 ]), async (req, res) => {
   try {
     const project = await Project.findById(req.params.id);
@@ -151,8 +173,24 @@ router.put('/:id', auth, handleUploads([
     } else if (req.body.documents) {
       documentUrls = Array.isArray(req.body.documents) ? req.body.documents : [req.body.documents];
     }
+    // Handle blockDiagram upload (single file, store Cloudinary URL)
+    let blockDiagramUrl = req.body.blockDiagram || project.blockDiagram || '';
+    if (req.uploads && req.uploads['blockDiagram'] && req.uploads['blockDiagram'][0]) {
+      blockDiagramUrl = req.uploads['blockDiagram'][0].url;
+    }
+    // Handle files[] upload (append Cloudinary URLs and metadata)
+    let filesArr = project.files || [];
+    if (req.uploads && req.uploads['files']) {
+      filesArr = filesArr.concat(req.uploads['files'].map(f => ({
+        filename: f.public_id,
+        originalname: f.public_id,
+        path: f.url,
+        mimetype: f.format,
+        size: f.bytes
+      })));
+    }
     // Update project fields
-    const updateFields = { ...req.body, images: imageUrls, documents: documentUrls };
+    const updateFields = { ...req.body, images: imageUrls, documents: documentUrls, blockDiagram: blockDiagramUrl, files: filesArr };
     const updatedProject = await Project.findByIdAndUpdate(
       req.params.id,
       updateFields,
@@ -223,33 +261,20 @@ router.options('/files/:filename', (req, res) => {
   res.status(200).end();
 });
 
-// Serve uploaded files (public access)
-router.get('/files/:filename', (req, res) => {
+// Serve uploaded files (Cloudinary only, public access)
+router.get('/files/:filename', async (req, res) => {
   const filename = req.params.filename;
-  const filepath = path.join(__dirname, '../../uploads/projects', filename);
-  
-  if (fs.existsSync(filepath)) {
-    // Set appropriate headers for file download/viewing
-    const ext = path.extname(filename).toLowerCase();
-    if (ext === '.pdf') {
-      res.setHeader('Content-Type', 'application/pdf');
-    } else if (['.jpg', '.jpeg', '.png', '.gif'].includes(ext)) {
-      res.setHeader('Content-Type', `image/${ext.slice(1)}`);
-    } else if (['.doc', '.docx'].includes(ext)) {
-      res.setHeader('Content-Type', 'application/msword');
-    } else {
-      res.setHeader('Content-Type', 'application/octet-stream');
-    }
-    
-    return res.sendFile(filepath);
-  } else {
-    // If using Cloudinary, files will be remote; provide hint
-    return res.status(404).json({ 
-      error: 'File not found',
-      message: 'The requested file is not on local storage. If you recently migrated to Cloudinary, use the stored image URLs from the project document.',
-      filename
-    });
+  // Search all projects for a file with this filename in files[]
+  const project = await Project.findOne({ 'files.filename': filename });
+  if (!project) {
+    return res.status(404).json({ error: 'File not found in any project', filename });
   }
+  const fileObj = project.files.find(f => f.filename === filename);
+  if (!fileObj || !fileObj.path) {
+    return res.status(404).json({ error: 'File not found in project', filename });
+  }
+  // Redirect to Cloudinary URL
+  return res.redirect(fileObj.path);
 });
 
 module.exports = router;
