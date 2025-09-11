@@ -1,4 +1,5 @@
 const fs = require('fs');
+const path = require('path');
 console.log('ENV FILE EXISTS:', fs.existsSync('./.env'));
 const express = require('express');
 const mongoose = require('mongoose');
@@ -20,7 +21,7 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Serve uploads directory as static files
-const path = require('path');
+// ...existing code...
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Import routes
@@ -73,7 +74,7 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/edutech',
 .catch(err => console.error('❌ MongoDB connection error:', err));
 
 // Serve uploaded custom request files statically (must be before API and 404 handlers)
-const path = require('path');
+// ...existing code...
 
 
 // Serve uploaded project images (block diagrams) statically
