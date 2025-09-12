@@ -20,8 +20,8 @@ router.post('/', handleUploads([
     }
     return url;
   }
-  const docFiles = (req.uploads && req.uploads['documents']) ? req.uploads['documents'].map(f => ({ filename: f.originalname || f.public_id, url: getDownloadUrl(f.url, f.originalname || f.public_id) })) : [];
-  const imgFiles = (req.uploads && req.uploads['images']) ? req.uploads['images'].map(f => ({ filename: f.originalname || f.public_id, url: getDownloadUrl(f.url, f.originalname || f.public_id) })) : [];
+  const docFiles = (req.uploads && req.uploads['documents']) ? req.uploads['documents'].map(f => ({ filename: f.originalname || f.public_id, url: f.url ? getDownloadUrl(f.url, f.originalname || f.public_id) : '' })) : [];
+  const imgFiles = (req.uploads && req.uploads['images']) ? req.uploads['images'].map(f => ({ filename: f.originalname || f.public_id, url: f.url ? getDownloadUrl(f.url, f.originalname || f.public_id) : '' })) : [];
   try {
     await sendEmail({
       email: process.env.CONTACT_RECEIVER_EMAIL || 'edutech956@gmail.com',

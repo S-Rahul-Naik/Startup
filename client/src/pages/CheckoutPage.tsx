@@ -397,25 +397,21 @@ const CheckoutPage: React.FC = () => {
                       imageUrl = 'https://via.placeholder.com/60x60?text=Project';
                     }
                     return (
-                      <div key={item._id} className="flex items-center space-x-3">
+                      <div key={item._id} className="flex flex-col items-center text-center space-y-2">
                         <img
                           src={imageUrl}
                           alt={item.title}
-                          className="w-15 h-15 rounded-lg object-cover bg-gray-200"
+                          className="w-24 h-24 rounded-lg object-cover bg-gray-200 mb-2"
                           onError={e => {
                             e.currentTarget.onerror = null;
-                            e.currentTarget.src = 'https://via.placeholder.com/60x60?text=Project';
+                            e.currentTarget.src = 'https://via.placeholder.com/96x96?text=Project';
                           }}
                         />
-                        <div className="flex-1">
-                          <h4 className="font-medium text-gray-900">{item.title}</h4>
-                          <p className="text-sm text-gray-500">{item.category}</p>
-                          <p className="text-sm text-gray-500">Qty: {item.quantity}</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-medium text-gray-900">
-                            {formatPrice(item.price * item.quantity)}
-                          </p>
+                        <h4 className="font-semibold text-gray-900 text-lg">{item.title}</h4>
+                        <p className="text-sm text-gray-500">{item.category}</p>
+                        <div className="flex justify-center items-center gap-4 mt-1">
+                          <span className="text-sm text-gray-500">Qty: {item.quantity}</span>
+                          <span className="font-medium text-gray-900">{formatPrice(item.price * item.quantity)}</span>
                         </div>
                       </div>
                     );

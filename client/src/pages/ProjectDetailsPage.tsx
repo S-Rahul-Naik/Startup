@@ -186,7 +186,7 @@ const ProjectDetailsPage: React.FC = () => {
                         className="text-primary-600 hover:underline"
                         download
                       >
-                        {file.originalname || file.filename}
+                        {file.originalname || file.filename || file.path.split('/').pop()}
                       </a>
                     </li>
                   ))}
