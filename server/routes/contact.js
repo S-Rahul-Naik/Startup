@@ -11,8 +11,17 @@ router.post('/', handleUploads([
     return res.status(400).json({ error: 'Please fill all required fields.' });
   }
   // Attachments info (filenames and download links)
-  const docFiles = (req.uploads && req.uploads['documents']) ? req.uploads['documents'].map(f => ({ filename: f.public_id, url: f.url })) : [];
-  const imgFiles = (req.uploads && req.uploads['images']) ? req.uploads['images'].map(f => ({ filename: f.public_id, url: f.url })) : [];
+  // Helper to build Cloudinary download URL with fl_attachment and original filename
+  function getDownloadUrl(url, originalname) {
+    if (!url || !originalname) return url;
+    const urlParts = url.split('/upload/');
+    if (urlParts.length === 2) {
+      return urlParts[0] + '/upload/fl_attachment:' + encodeURIComponent(originalname) + '/' + urlParts[1];
+    }
+    return url;
+  }
+  const docFiles = (req.uploads && req.uploads['documents']) ? req.uploads['documents'].map(f => ({ filename: f.originalname || f.public_id, url: getDownloadUrl(f.url, f.originalname || f.public_id) })) : [];
+  const imgFiles = (req.uploads && req.uploads['images']) ? req.uploads['images'].map(f => ({ filename: f.originalname || f.public_id, url: getDownloadUrl(f.url, f.originalname || f.public_id) })) : [];
   try {
     await sendEmail({
       email: process.env.CONTACT_RECEIVER_EMAIL || 'edutech956@gmail.com',

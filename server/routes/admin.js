@@ -231,7 +231,7 @@ router.post('/projects', handleUploads([
       blockDiagram = req.uploads['blockDiagram'][0].url;
     }
 
-    // Handle files[] upload (store Cloudinary URLs and metadata)
+    // Handle files[] upload (store Cloudinary URLs and metadata, with fl_attachment for download)
     let files = [];
     if (req.uploads && req.uploads['files']) {
       files = req.uploads['files'].map(f => {
@@ -239,10 +239,19 @@ router.post('/projects', handleUploads([
         if (f.resource_type === 'image' && f.url && !images.includes(f.url)) {
           images.push(f.url);
         }
+        // Build download URL with fl_attachment and original filename
+        let downloadUrl = f.url;
+        if (f.url && f.originalname) {
+          // Cloudinary raw/upload URLs: insert /fl_attachment:filename/ after /upload/
+          const urlParts = f.url.split('/upload/');
+          if (urlParts.length === 2) {
+            downloadUrl = urlParts[0] + '/upload/fl_attachment:' + encodeURIComponent(f.originalname) + '/' + urlParts[1];
+          }
+        }
         return {
           filename: f.public_id,
           originalname: f.originalname || f.public_id,
-          path: f.url,
+          path: downloadUrl,
           mimetype: f.format,
           size: f.bytes
         };
@@ -263,7 +272,10 @@ router.post('/projects', handleUploads([
       documents,
       blockDiagram,
       creator: req.user.id,
-      createdBy: req.user.id
+      createdBy: req.user.id,
+      abstract: req.body.abstract || '',
+      specifications: req.body.specifications || '',
+      learningOutcomes: req.body.learningOutcomes || []
     });
     await project.save();
     res.status(201).json(project);

@@ -1,3 +1,12 @@
+// Helper to build Cloudinary download URL with fl_attachment and original filename
+function getDownloadUrl(url, originalname) {
+  if (!url || !originalname) return url;
+  const urlParts = url.split('/upload/');
+  if (urlParts.length === 2) {
+    return urlParts[0] + '/upload/fl_attachment:' + encodeURIComponent(originalname) + '/' + urlParts[1];
+  }
+  return url;
+}
 const nodemailer = require('nodemailer');
 
 // Create transporter
@@ -122,52 +131,56 @@ const emailTemplates = {
     `
   }),
   
-  projectOrder: (data) => ({
-    subject: 'Project Order Confirmation',
-    html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <div style="background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%); color: white; padding: 30px; text-align: center;">
-          <h1 style="margin: 0; font-size: 28px;">Order Confirmed!</h1>
-          <p style="margin: 10px 0 0 0; font-size: 16px;">Your project is being prepared</p>
-        </div>
-        
-        <div style="padding: 30px; background: #f9f9f9;">
-          <h2 style="color: #333; margin-bottom: 20px;">Hello ${data.customerName}!</h2>
-          
-          <p style="color: #666; line-height: 1.6; margin-bottom: 20px;">
-            Thank you for your order! We're excited to help you with your academic project.
-          </p>
-          
-          <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0;">
-            <h3 style="color: #333; margin-top: 0;">Order Details:</h3>
-            <p><strong>Order ID:</strong> ${data.orderId}</p>
-            <p><strong>Project:</strong> ${data.projectTitle}</p>
-            <p><strong>Amount:</strong> ₹${data.amount}</p>
-            <p><strong>Order Date:</strong> ${data.orderDate}</p>
+  projectOrder: (data) => {
+    // If data.files or data.documents, build download links
+    let filesSection = '';
+    if (Array.isArray(data.files) && data.files.length) {
+      filesSection = `<div style="margin: 20px 0;"><h4 style="margin:0 0 8px 0;">Project Files:</h4>${data.files.map(f => `<a href="${getDownloadUrl(f.url || f.path, f.originalname || f.filename)}" style="color: #667eea; text-decoration: underline;" download>${f.originalname || f.filename}</a>`).join('<br/>')}</div>`;
+    }
+    if (Array.isArray(data.documents) && data.documents.length) {
+      filesSection += `<div style="margin: 20px 0;"><h4 style="margin:0 0 8px 0;">Documents:</h4>${data.documents.map(f => `<a href="${getDownloadUrl(f.url || f.path, f.originalname || f.filename)}" style="color: #667eea; text-decoration: underline;" download>${f.originalname || f.filename}</a>`).join('<br/>')}</div>`;
+    }
+    return {
+      subject: 'Project Order Confirmation',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <div style="background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%); color: white; padding: 30px; text-align: center;">
+            <h1 style="margin: 0; font-size: 28px;">Order Confirmed!</h1>
+            <p style="margin: 10px 0 0 0; font-size: 16px;">Your project is being prepared</p>
           </div>
-          
-          <p style="color: #666; line-height: 1.6; margin-bottom: 20px;">
-            Our team will start working on your project immediately. You'll receive updates on the progress.
-          </p>
-          
-          <div style="text-align: center; margin: 30px 0;">
-            <a href="${process.env.FRONTEND_URL}/dashboard/orders/${data.orderId}" style="background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%); color: white; padding: 15px 30px; text-decoration: none; border-radius: 25px; display: inline-block; font-weight: bold;">
-              View Order
-            </a>
+          <div style="padding: 30px; background: #f9f9f9;">
+            <h2 style="color: #333; margin-bottom: 20px;">Hello ${data.customerName}!</h2>
+            <p style="color: #666; line-height: 1.6; margin-bottom: 20px;">
+              Thank you for your order! We're excited to help you with your academic project.
+            </p>
+            <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0;">
+              <h3 style="color: #333; margin-top: 0;">Order Details:</h3>
+              <p><strong>Order ID:</strong> ${data.orderId}</p>
+              <p><strong>Project:</strong> ${data.projectTitle}</p>
+              <p><strong>Amount:</strong> ₹${data.amount}</p>
+              <p><strong>Order Date:</strong> ${data.orderDate}</p>
+            </div>
+            ${filesSection}
+            <p style="color: #666; line-height: 1.6; margin-bottom: 20px;">
+              Our team will start working on your project immediately. You'll receive updates on the progress.
+            </p>
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${process.env.FRONTEND_URL}/dashboard/orders/${data.orderId}" style="background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%); color: white; padding: 15px 30px; text-decoration: none; border-radius: 25px; display: inline-block; font-weight: bold;">
+                View Order
+              </a>
+            </div>
+            <p style="color: #666; line-height: 1.6; margin: 0;">
+              If you have any questions, contact us at +91 7672039975
+            </p>
           </div>
-          
-          <p style="color: #666; line-height: 1.6; margin: 0;">
-            If you have any questions, contact us at +91 7672039975
-          </p>
+          <div style="background: #333; color: white; padding: 20px; text-align: center; font-size: 12px;">
+            <p style="margin: 0;">© 2025 Edu Tech. All rights reserved.</p>
+            <p style="margin: 10px 0 0 0;">Contact: +91 76720 39975 | edutech956@gmail.com</p>
+          </div>
         </div>
-        
-        <div style="background: #333; color: white; padding: 20px; text-align: center; font-size: 12px;">
-          <p style="margin: 0;">© 2025 Edu Tech. All rights reserved.</p>
-          <p style="margin: 10px 0 0 0;">Contact: +91 76720 39975 | edutech956@gmail.com</p>
-        </div>
-      </div>
-    `
-  }),
+      `
+    };
+  },
   
   projectUpdate: (data) => ({
     subject: 'Project Update Available',

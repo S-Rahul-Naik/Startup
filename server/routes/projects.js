@@ -110,7 +110,7 @@ router.post('/', auth, handleUploads([
     if (req.uploads && req.uploads['blockDiagram'] && req.uploads['blockDiagram'][0]) {
       blockDiagramUrl = req.uploads['blockDiagram'][0].url;
     }
-    // Handle files[] upload (store Cloudinary URLs and metadata)
+    // Handle files[] upload (store Cloudinary URLs and metadata, with fl_attachment for download)
     let filesArr = [];
     if (req.uploads && req.uploads['files']) {
       filesArr = req.uploads['files'].map(f => {
@@ -118,10 +118,19 @@ router.post('/', auth, handleUploads([
         if (f.resource_type === 'image' && f.url && !imageUrls.includes(f.url)) {
           imageUrls.push(f.url);
         }
+        // Build download URL with fl_attachment and original filename
+        let downloadUrl = f.url;
+        if (f.url && f.originalname) {
+          // Cloudinary raw/upload URLs: insert /fl_attachment:filename/ after /upload/
+          const urlParts = f.url.split('/upload/');
+          if (urlParts.length === 2) {
+            downloadUrl = urlParts[0] + '/upload/fl_attachment:' + encodeURIComponent(f.originalname) + '/' + urlParts[1];
+          }
+        }
         return {
           filename: f.public_id,
           originalname: f.originalname || f.public_id,
-          path: f.url,
+          path: downloadUrl,
           mimetype: f.format,
           size: f.bytes
         };
