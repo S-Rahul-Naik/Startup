@@ -20,9 +20,7 @@ console.log('CLOUDINARY_API_SECRET:', process.env.CLOUDINARY_API_SECRET ? '***' 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Serve uploads directory as static files
-// ...existing code...
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// No local static uploads: all user assets are stored on Cloudinary
 
 // Import routes
 const authRoutes = require('./routes/auth');
@@ -77,10 +75,7 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/edutech',
 // ...existing code...
 
 
-// Serve uploaded project images (block diagrams) statically
-const projectsUploadsPath = path.join(__dirname, '../uploads/projects');
-console.log('Serving project uploads from:', projectsUploadsPath);
-app.use('/uploads/projects', express.static(projectsUploadsPath));
+// Removed legacy static serving of /uploads/projects
 
 // Serve uploaded custom request files statically
 const customRequestsPath = path.join(__dirname, '../uploads/custom-requests');

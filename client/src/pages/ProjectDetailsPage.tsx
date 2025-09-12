@@ -180,7 +180,7 @@ const ProjectDetailsPage: React.FC = () => {
                   {project.files.map((file: any, index: number) => (
                     <li key={index} className="flex items-center gap-2">
                       <a
-                  href={file.path?.startsWith('http') ? file.path : `${API_URL}/api/projects/files/${file.filename}`}
+                        href={file.path}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-primary-600 hover:underline"

@@ -113,13 +113,19 @@ router.post('/', auth, handleUploads([
     // Handle files[] upload (store Cloudinary URLs and metadata)
     let filesArr = [];
     if (req.uploads && req.uploads['files']) {
-      filesArr = req.uploads['files'].map(f => ({
-        filename: f.public_id,
-        originalname: f.public_id,
-        path: f.url,
-        mimetype: f.format,
-        size: f.bytes
-      }));
+      filesArr = req.uploads['files'].map(f => {
+        // If file is an image, add its Cloudinary URL to imageUrls
+        if (f.resource_type === 'image' && f.url && !imageUrls.includes(f.url)) {
+          imageUrls.push(f.url);
+        }
+        return {
+          filename: f.public_id,
+          originalname: f.originalname || f.public_id,
+          path: f.url,
+          mimetype: f.format,
+          size: f.bytes
+        };
+      });
     }
     const project = new Project({
       title,
