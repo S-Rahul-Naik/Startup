@@ -169,8 +169,10 @@ router.get('/projects', async (req, res) => {
 
 // Create new project (admin only, uploads to Cloudinary)
 router.post('/projects', handleUploads([
-  { name: 'files', maxCount: 10 },
-  { name: 'blockDiagram', maxCount: 1 }
+  { name: 'images', maxCount: 10 },
+  { name: 'documents', maxCount: 10 },
+  { name: 'blockDiagram', maxCount: 1 },
+  { name: 'files', maxCount: 10 }
 ]), async (req, res) => {
   try {
     const { title, description, price, category, domain, difficulty, isPublished } = req.body;
@@ -200,17 +202,51 @@ router.post('/projects', handleUploads([
       categoryId = defaultCategory._id;
     }
 
-    // Handle files uploaded to Cloudinary
-    let files = [];
-    if (req.files && req.files['files']) {
-      files = req.files['files'].map(f => ({
-        url: f.path,
-        public_id: f.filename || f.originalname
-      }));
+
+    // Handle images
+    let images = [];
+    if (req.uploads && req.uploads['images']) {
+      images = req.uploads['images'].map(f => f.url);
+    } else if (req.body.images) {
+      images = Array.isArray(req.body.images) ? req.body.images : [req.body.images];
     }
-    let blockDiagram = '';
-    if (req.files && req.files['blockDiagram'] && req.files['blockDiagram'][0]) {
-      blockDiagram = req.files['blockDiagram'][0].path;
+
+    // Handle documents (store as objects with metadata)
+    let documents = [];
+    if (req.uploads && req.uploads['documents']) {
+      documents = req.uploads['documents'].map(f => ({
+        filename: f.public_id,
+        originalname: f.originalname || f.public_id,
+        url: f.url,
+        mimetype: f.format,
+        size: f.bytes
+      }));
+    } else if (req.body.documents) {
+      documents = Array.isArray(req.body.documents) ? req.body.documents : [req.body.documents];
+    }
+
+    // Handle blockDiagram
+    let blockDiagram = req.body.blockDiagram || '';
+    if (req.uploads && req.uploads['blockDiagram'] && req.uploads['blockDiagram'][0]) {
+      blockDiagram = req.uploads['blockDiagram'][0].url;
+    }
+
+    // Handle files[] upload (store Cloudinary URLs and metadata)
+    let files = [];
+    if (req.uploads && req.uploads['files']) {
+      files = req.uploads['files'].map(f => {
+        // If file is an image, add its Cloudinary URL to images array (avoid duplicates)
+        if (f.resource_type === 'image' && f.url && !images.includes(f.url)) {
+          images.push(f.url);
+        }
+        return {
+          filename: f.public_id,
+          originalname: f.originalname || f.public_id,
+          path: f.url,
+          mimetype: f.format,
+          size: f.bytes
+        };
+      });
     }
 
     const project = new Project({
@@ -223,6 +259,8 @@ router.post('/projects', handleUploads([
       difficulty,
       isPublished,
       files,
+      images,
+      documents,
       blockDiagram,
       creator: req.user.id,
       createdBy: req.user.id
