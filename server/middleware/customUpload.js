@@ -44,6 +44,7 @@ function handleUploads(fields) {
               resource_type: result.resource_type,
               bytes: result.bytes,
               format: result.format,
+              originalname: file.originalname // Add original filename
             });
           }
         }

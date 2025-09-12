@@ -91,24 +91,49 @@ router.post('/', auth, handleUploads([
     if (!title || !description || !price) {
       return res.status(400).json({ error: 'Title, description, and price are required' });
     }
-    // Collect image URLs from Cloudinary uploads
+    // Collect image URLs and original names from Cloudinary uploads
     let imageUrls = [];
+    let imagesArr = [];
     if (req.uploads && req.uploads['images']) {
+      imagesArr = req.uploads['images'].map(f => ({
+        url: f.url,
+        originalname: f.originalname || '',
+        filename: f.public_id,
+        mimetype: f.format,
+        size: f.bytes
+      }));
       imageUrls = req.uploads['images'].map(f => f.url);
     } else if (req.body.images) {
       imageUrls = Array.isArray(req.body.images) ? req.body.images : [req.body.images];
     }
-    // Collect document URLs from Cloudinary uploads
+    // Collect document URLs and original names from Cloudinary uploads
     let documentUrls = [];
+    let documentsArr = [];
     if (req.uploads && req.uploads['documents']) {
+      documentsArr = req.uploads['documents'].map(f => ({
+        url: f.url,
+        originalname: f.originalname || '',
+        filename: f.public_id,
+        mimetype: f.format,
+        size: f.bytes
+      }));
       documentUrls = req.uploads['documents'].map(f => f.url);
     } else if (req.body.documents) {
       documentUrls = Array.isArray(req.body.documents) ? req.body.documents : [req.body.documents];
     }
-    // Handle blockDiagram upload (single file, store Cloudinary URL)
+    // Handle blockDiagram upload (single file, store Cloudinary URL and original name)
+    let blockDiagramObj = null;
     let blockDiagramUrl = req.body.blockDiagram || '';
     if (req.uploads && req.uploads['blockDiagram'] && req.uploads['blockDiagram'][0]) {
-      blockDiagramUrl = req.uploads['blockDiagram'][0].url;
+      const f = req.uploads['blockDiagram'][0];
+      blockDiagramUrl = f.url;
+      blockDiagramObj = {
+        url: f.url,
+        originalname: f.originalname || '',
+        filename: f.public_id,
+        mimetype: f.format,
+        size: f.bytes
+      };
     }
     // Handle files[] upload (store Cloudinary URLs and metadata, with fl_attachment for download)
     let filesArr = [];
@@ -121,7 +146,6 @@ router.post('/', auth, handleUploads([
         // Build download URL with fl_attachment and original filename
         let downloadUrl = f.url;
         if (f.url && f.originalname) {
-          // Cloudinary raw/upload URLs: insert /fl_attachment:filename/ after /upload/
           const urlParts = f.url.split('/upload/');
           if (urlParts.length === 2) {
             downloadUrl = urlParts[0] + '/upload/fl_attachment:' + encodeURIComponent(f.originalname) + '/' + urlParts[1];
@@ -143,9 +167,9 @@ router.post('/', auth, handleUploads([
       category,
       tags: tags || [],
       features: features || [],
-      images: imageUrls,
-      documents: documentUrls,
-      blockDiagram: blockDiagramUrl,
+      images: imagesArr.length > 0 ? imagesArr : imageUrls,
+      documents: documentsArr.length > 0 ? documentsArr : documentUrls,
+      blockDiagram: blockDiagramObj || blockDiagramUrl,
       files: filesArr,
       creator: req.user.id,
       isPublished: false
@@ -174,38 +198,67 @@ router.put('/:id', auth, handleUploads([
     if (project.creator.toString() !== req.user.id && req.user.role !== 'admin') {
       return res.status(403).json({ error: 'Not authorized to update this project' });
     }
-    // If new images uploaded, append to or replace images array
-    let imageUrls = project.images || [];
+    // If new images uploaded, append to or replace images array (with originalname)
+    let imageObjs = Array.isArray(project.images) ? [...project.images] : [];
     if (req.uploads && req.uploads['images']) {
-      imageUrls = imageUrls.concat(req.uploads['images'].map(f => f.url));
-    } else if (req.body.images) {
-      imageUrls = Array.isArray(req.body.images) ? req.body.images : [req.body.images];
-    }
-    // If new documents uploaded, append to or replace documents array
-    let documentUrls = project.documents || [];
-    if (req.uploads && req.uploads['documents']) {
-      documentUrls = documentUrls.concat(req.uploads['documents'].map(f => f.url));
-    } else if (req.body.documents) {
-      documentUrls = Array.isArray(req.body.documents) ? req.body.documents : [req.body.documents];
-    }
-    // Handle blockDiagram upload (single file, store Cloudinary URL)
-    let blockDiagramUrl = req.body.blockDiagram || project.blockDiagram || '';
-    if (req.uploads && req.uploads['blockDiagram'] && req.uploads['blockDiagram'][0]) {
-      blockDiagramUrl = req.uploads['blockDiagram'][0].url;
-    }
-    // Handle files[] upload (append Cloudinary URLs and metadata)
-    let filesArr = project.files || [];
-    if (req.uploads && req.uploads['files']) {
-      filesArr = filesArr.concat(req.uploads['files'].map(f => ({
+      imageObjs = imageObjs.concat(req.uploads['images'].map(f => ({
+        url: f.url,
+        originalname: f.originalname || '',
         filename: f.public_id,
-        originalname: f.public_id,
-        path: f.url,
         mimetype: f.format,
         size: f.bytes
       })));
+    } else if (req.body.images) {
+      // If images are just URLs, keep as is
+      imageObjs = Array.isArray(req.body.images) ? req.body.images : [req.body.images];
+    }
+    // If new documents uploaded, append to or replace documents array (with originalname)
+    let documentObjs = Array.isArray(project.documents) ? [...project.documents] : [];
+    if (req.uploads && req.uploads['documents']) {
+      documentObjs = documentObjs.concat(req.uploads['documents'].map(f => ({
+        url: f.url,
+        originalname: f.originalname || '',
+        filename: f.public_id,
+        mimetype: f.format,
+        size: f.bytes
+      })));
+    } else if (req.body.documents) {
+      documentObjs = Array.isArray(req.body.documents) ? req.body.documents : [req.body.documents];
+    }
+    // Handle blockDiagram upload (single file, store Cloudinary URL and originalname)
+    let blockDiagramObj = project.blockDiagram || null;
+    if (req.uploads && req.uploads['blockDiagram'] && req.uploads['blockDiagram'][0]) {
+      const f = req.uploads['blockDiagram'][0];
+      blockDiagramObj = {
+        url: f.url,
+        originalname: f.originalname || '',
+        filename: f.public_id,
+        mimetype: f.format,
+        size: f.bytes
+      };
+    }
+    // Handle files[] upload (append Cloudinary URLs and metadata, with fl_attachment)
+    let filesArr = Array.isArray(project.files) ? [...project.files] : [];
+    if (req.uploads && req.uploads['files']) {
+      filesArr = filesArr.concat(req.uploads['files'].map(f => {
+        let downloadUrl = f.url;
+        if (f.url && f.originalname) {
+          const urlParts = f.url.split('/upload/');
+          if (urlParts.length === 2) {
+            downloadUrl = urlParts[0] + '/upload/fl_attachment:' + encodeURIComponent(f.originalname) + '/' + urlParts[1];
+          }
+        }
+        return {
+          filename: f.public_id,
+          originalname: f.originalname || f.public_id,
+          path: downloadUrl,
+          mimetype: f.format,
+          size: f.bytes
+        };
+      }));
     }
     // Update project fields
-    const updateFields = { ...req.body, images: imageUrls, documents: documentUrls, blockDiagram: blockDiagramUrl, files: filesArr };
+    const updateFields = { ...req.body, images: imageObjs, documents: documentObjs, blockDiagram: blockDiagramObj, files: filesArr };
     const updatedProject = await Project.findByIdAndUpdate(
       req.params.id,
       updateFields,

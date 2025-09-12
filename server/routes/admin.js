@@ -466,10 +466,10 @@ router.get('/dashboard', async (req, res) => {
     const publishedProjects = await Project.countDocuments({ isPublished: true });
     const pendingProjects = await Project.countDocuments({ isPublished: false, isApproved: { $ne: false } });
 
-    // Orders and revenue
-    const orders = await Order.find({ status: { $in: ['paid', 'processing', 'delivered', 'completed'] } });
-    const totalOrders = orders.length;
-    const totalRevenue = orders.reduce((sum, order) => sum + (order.amount || 0), 0);
+  // Orders and revenue (only count 'paid' orders for revenue)
+  const orders = await Order.find({ status: 'paid' });
+  const totalOrders = orders.length;
+  const totalRevenue = orders.reduce((sum, order) => sum + (order.amount || 0), 0);
 
     // Recent activity
     const recentUsers = await User.find()

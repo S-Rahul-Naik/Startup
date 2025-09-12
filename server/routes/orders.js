@@ -330,6 +330,7 @@ router.post('/', auth, handleUploads([{ name: 'receipt', maxCount: 1 }]), async 
 
     // Send order confirmation email with professional styling
     try {
+      // Send to user
       await sendEmail({
         email: deliveryAddress.email,
         subject: 'Order Confirmation - Edu Tech',
@@ -359,13 +360,10 @@ router.post('/', auth, handleUploads([{ name: 'receipt', maxCount: 1 }]), async 
           </div>
         `
       });
-    } catch (e) {
-      console.error('Failed to send order confirmation email:', e);
-    }
-    try {
+      // Send to company (same template)
       await sendEmail({
-        email: deliveryAddress.email,
-        subject: 'Order Confirmation - Edu Tech',
+        email: 'edutech956@gmail.com',
+        subject: 'Order Confirmation - Edu Tech (Copy)',
         html: `
           <div style="max-width:480px;margin:40px auto;background:#fff;border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,0.08);padding:32px 24px;font-family:'Segoe UI',Arial,sans-serif;">
             <div style="text-align:center;margin-bottom:24px;">
@@ -377,38 +375,25 @@ router.post('/', auth, handleUploads([{ name: 'receipt', maxCount: 1 }]), async 
             </div>
             <div style="background:#f7f7fa;border-radius:12px;padding:20px 16px;margin-bottom:24px;">
               <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-                <span style="color:#888;font-size:14px;">Status</span>
-                <span style="color:#22c55e;font-weight:500;font-size:14px;">Successful</span>
+                <span style="font-weight:600;">Project:</span> <span>${project.title}</span>
               </div>
               <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-                <span style="color:#888;font-size:14px;">Date</span>
-                <span style="color:#222;font-size:14px;">${new Date().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}</span>
-              </div>
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-                <span style="color:#888;font-size:14px;">Project</span>
-                <span style="color:#222;font-size:14px;">${project.title}</span>
-              </div>
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-                <span style="color:#888;font-size:14px;">Amount</span>
-                <span style="color:#222;font-size:14px;">₹${project.price}</span>
+                <span style="font-weight:600;">Amount:</span> <span>Rs. ${project.price}</span>
               </div>
               <div style="display:flex;align-items:center;justify-content:space-between;">
-                <span style="color:#888;font-size:14px;">Payment Method</span>
-                <span style="color:#222;font-size:14px;">UPI</span>
+                <span style="font-weight:600;">Order ID:</span> <span>${order._id}</span>
               </div>
             </div>
-            ${receiptUrl ? `<a href="${receiptUrl}" style="display:block;text-align:center;background:#222;color:#fff;text-decoration:none;padding:12px 0;border-radius:8px;font-weight:500;font-size:15px;margin-bottom:16px;">Download Receipt</a>` : ''}
-            <p style="color:#666;text-align:center;font-size:14px;margin:0;">Thank you for choosing Edu Tech!<br>We will process your order soon.</p>
+            <div style="text-align:center;">
+              <a href="${receiptUrl}" style="display:inline-block;padding:10px 24px;background:#22c55e;color:#fff;border-radius:8px;text-decoration:none;font-weight:600;">View Receipt</a>
+            </div>
           </div>
-        `,
-        attachments: req.file ? [{
-          filename: req.file.originalname,
-          path: req.file.path
-        }] : []
+        `
       });
-    } catch (emailErr) {
-      console.error('Order email failed:', emailErr);
+    } catch (e) {
+      console.error('Failed to send order confirmation email:', e);
     }
+  // (Removed duplicate/different user email)
   } catch (error) {
     console.error('Error creating order:', error);
     res.status(500).json({ message: 'Failed to create order' });
