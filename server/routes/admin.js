@@ -1,39 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
+const { handleUploads } = require('../middleware/customUpload');
 const User = require('../models/User');
 const Project = require('../models/Project');
 const Order = require('../models/Order');
 const Category = require('../models/Category');
 const { auth } = require('../middleware/auth');
 
-// Configure multer for file uploads
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    const uploadDir = path.join(__dirname, '../../uploads/projects');
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-    cb(null, uploadDir);
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
 
-const upload = multer({ 
-  storage: storage,
-  limits: {
-    fileSize: 10 * 1024 * 1024 // 10MB limit
-  },
-  fileFilter: function (req, file, cb) {
-  // Allow all file types
-  cb(null, true);
-  }
-});
 
 // Admin middleware - check if user is admin
 const adminAuth = async (req, res, next) => {
@@ -193,18 +167,16 @@ router.get('/projects', async (req, res) => {
   }
 });
 
-// Create new project (admin only)
-router.post('/projects', upload.fields([
+// Create new project (admin only, uploads to Cloudinary)
+router.post('/projects', handleUploads([
   { name: 'files', maxCount: 10 },
   { name: 'blockDiagram', maxCount: 1 }
 ]), async (req, res) => {
   try {
     const { title, description, price, category, domain, difficulty, isPublished } = req.body;
-    
     // Handle category - create if it doesn't exist
     let categoryId = category;
     if (category && typeof category === 'string' && category.trim()) {
-      // Check if category exists, if not create it
       let existingCategory = await Category.findOne({ name: { $regex: new RegExp(`^${category}$`, 'i') } });
       if (!existingCategory) {
         existingCategory = new Category({
@@ -216,7 +188,6 @@ router.post('/projects', upload.fields([
       }
       categoryId = existingCategory._id;
     } else {
-      // Use default category
       let defaultCategory = await Category.findOne({ name: 'General' });
       if (!defaultCategory) {
         defaultCategory = new Category({
@@ -228,54 +199,37 @@ router.post('/projects', upload.fields([
       }
       categoryId = defaultCategory._id;
     }
-    
-    // Process uploaded files
-    const uploadedFiles = [];
+
+    // Handle files uploaded to Cloudinary
+    let files = [];
     if (req.files && req.files['files']) {
-      req.files['files'].forEach(file => {
-        uploadedFiles.push({
-          filename: file.filename,
-          originalname: file.originalname,
-          path: file.path,
-          mimetype: file.mimetype,
-          size: file.size
-        });
-      });
+      files = req.files['files'].map(f => ({
+        url: f.path,
+        public_id: f.filename || f.originalname
+      }));
     }
-
-    // Handle block diagram image
-    let blockDiagramPath = '';
+    let blockDiagram = '';
     if (req.files && req.files['blockDiagram'] && req.files['blockDiagram'][0]) {
-      blockDiagramPath = '/uploads/projects/' + req.files['blockDiagram'][0].filename;
-    } else if (req.body.blockDiagram) {
-      blockDiagramPath = req.body.blockDiagram;
+      blockDiagram = req.files['blockDiagram'][0].path;
     }
 
-    // Create a simplified project with required fields
     const project = new Project({
       title,
       description,
-      shortDescription: description.substring(0, 500), // Auto-generate short description
-      price: parseFloat(price),
+      shortDescription: description ? description.substring(0, 500) : '',
+      price,
       category: categoryId,
-      domain: domain || 'Python', // Use provided domain or default
-      difficulty: difficulty || 'Intermediate', // Use provided difficulty or default
+      domain,
+      difficulty,
+      isPublished,
+      files,
+      blockDiagram,
       creator: req.user.id,
-      isPublished: isPublished || false,
-      isApproved: true, // Admin projects are auto-approved
-      approvedBy: req.user.id,
-      approvedAt: new Date(),
-      status: isPublished ? 'published' : 'draft',
-      files: uploadedFiles, // Add uploaded files to project
-      abstract: req.body.abstract || '',
-      blockDiagram: blockDiagramPath,
-      specifications: req.body.specifications || '',
-      learningOutcomes: req.body.learningOutcomes || []
+      createdBy: req.user.id
     });
-    
     await project.save();
-    
     res.status(201).json(project);
+
   } catch (error) {
     console.error('Error creating project:', error);
     res.status(500).json({ error: 'Failed to create project' });
@@ -495,22 +449,9 @@ router.get('/dashboard', async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching dashboard stats:', error);
+
     res.status(500).json({ error: 'Failed to fetch dashboard stats' });
   }
 });
-
-// Serve uploaded files
-router.get('/files/:filename', (req, res) => {
-  const filename = req.params.filename;
-  const filepath = path.join(__dirname, '../../uploads/projects', filename);
-  
-  if (fs.existsSync(filepath)) {
-    res.sendFile(filepath);
-  } else {
-    res.status(404).json({ error: 'File not found' });
-  }
-});
-
-// ...existing code...
 
 module.exports = router;
