@@ -51,19 +51,35 @@ async function uploadBufferToCloudinary(file, folder) {
   const options = {
     folder: uploadFolder,
     resource_type: resourceType,
-    public_id: `${Date.now()}-${Math.round(Math.random() * 1e9)}`,
-    overwrite: false,
-    ...(resourceType === 'raw' && file.originalname
-      ? { use_filename: true, unique_filename: false, filename_override: file.originalname }
-      : {})
+    use_filename: true,
+    unique_filename: false,
+    filename_override: file.originalname
   };
-  return new Promise((resolve, reject) => {
-    const uploadStream = cloudinary.uploader.upload_stream(options, (err, result) => {
-      if (err) return reject(err);
-      resolve(result);
+
+  if (resourceType === 'raw') {
+    // Save buffer to a temp file, then upload
+    const fs = require('fs');
+    const os = require('os');
+    const path = require('path');
+    const tmpFilePath = path.join(os.tmpdir(), file.originalname);
+    fs.writeFileSync(tmpFilePath, file.buffer);
+    try {
+      const result = await cloudinary.uploader.upload(tmpFilePath, options);
+      fs.unlinkSync(tmpFilePath); // Clean up temp file
+      return result;
+    } catch (err) {
+      fs.unlinkSync(tmpFilePath);
+      throw err;
+    }
+  } else {
+    return new Promise((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(options, (err, result) => {
+        if (err) return reject(err);
+        resolve(result);
+      });
+      streamifier.createReadStream(file.buffer).pipe(uploadStream);
     });
-    streamifier.createReadStream(file.buffer).pipe(uploadStream);
-  });
+  }
 }
 
 // Middleware to handle fields and push Cloudinary URLs into req.uploads
