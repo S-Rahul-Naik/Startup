@@ -1,11 +1,9 @@
 // Helper to build Cloudinary download URL with fl_attachment and original filename
 function getDownloadUrl(url, originalname) {
   if (!url || !originalname) return url;
-  const urlParts = url.split('/upload/');
-  if (urlParts.length === 2) {
-    return urlParts[0] + '/upload/fl_attachment:' + encodeURIComponent(originalname) + '/' + urlParts[1];
-  }
-  return url;
+  // Always use query param for all file types
+  const baseUrl = url.split('?')[0];
+  return baseUrl + '?fl_attachment=' + encodeURIComponent(originalname);
 }
 const nodemailer = require('nodemailer');
 

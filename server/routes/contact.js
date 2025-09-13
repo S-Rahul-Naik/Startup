@@ -11,8 +11,15 @@ router.post('/', handleUploads([
     return res.status(400).json({ error: 'Please fill all required fields.' });
   }
   // Attachments info (filenames and download links)
-  const docFiles = (req.uploads && req.uploads['documents']) ? req.uploads['documents'].map(f => ({ filename: f.originalname || f.public_id, url: f.url })) : [];
-  const imgFiles = (req.uploads && req.uploads['images']) ? req.uploads['images'].map(f => ({ filename: f.originalname || f.public_id, url: f.url })) : [];
+  function getDownloadUrl(url, originalname) {
+    if (!url || !originalname) return url;
+    // Always use query param for all file types
+    // Remove any existing query string before appending
+    const baseUrl = url.split('?')[0];
+    return baseUrl + '?fl_attachment=' + encodeURIComponent(originalname);
+  }
+  const docFiles = (req.uploads && req.uploads['documents']) ? req.uploads['documents'].map(f => ({ filename: f.originalname || f.public_id, url: getDownloadUrl(f.url, f.originalname || f.public_id) })) : [];
+  const imgFiles = (req.uploads && req.uploads['images']) ? req.uploads['images'].map(f => ({ filename: f.originalname || f.public_id, url: getDownloadUrl(f.url, f.originalname || f.public_id) })) : [];
   res.json({ success: true, message: 'Message sent successfully!' });
   // Send email in the background (non-blocking)
   sendEmail({

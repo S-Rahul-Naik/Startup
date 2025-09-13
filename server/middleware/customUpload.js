@@ -53,6 +53,9 @@ async function uploadBufferToCloudinary(file, folder) {
     resource_type: resourceType,
     public_id: `${Date.now()}-${Math.round(Math.random() * 1e9)}`,
     overwrite: false,
+    ...(resourceType === 'raw' && file.originalname
+      ? { use_filename: true, unique_filename: false, filename_override: file.originalname }
+      : {})
   };
   return new Promise((resolve, reject) => {
     const uploadStream = cloudinary.uploader.upload_stream(options, (err, result) => {

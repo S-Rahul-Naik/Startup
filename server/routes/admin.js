@@ -235,18 +235,13 @@ router.post('/projects', handleUploads([
     let files = [];
     if (req.uploads && req.uploads['files']) {
       files = req.uploads['files'].map(f => {
-        // If file is an image, add its Cloudinary URL to images array (avoid duplicates)
         if (f.resource_type === 'image' && f.url && !images.includes(f.url)) {
           images.push(f.url);
         }
-        // Build download URL with fl_attachment and original filename
         let downloadUrl = f.url;
         if (f.url && f.originalname) {
-          // Cloudinary raw/upload URLs: insert /fl_attachment:filename/ after /upload/
-          const urlParts = f.url.split('/upload/');
-          if (urlParts.length === 2) {
-            downloadUrl = urlParts[0] + '/upload/fl_attachment:' + encodeURIComponent(f.originalname) + '/' + urlParts[1];
-          }
+          const baseUrl = f.url.split('?')[0];
+          downloadUrl = baseUrl + '?fl_attachment=' + encodeURIComponent(f.originalname);
         }
         return {
           filename: f.public_id,

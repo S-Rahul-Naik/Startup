@@ -139,14 +139,14 @@ router.post('/', auth, handleUploads([
     let filesArr = [];
     if (req.uploads && req.uploads['files']) {
       filesArr = req.uploads['files'].map(f => {
-        // If file is an image, add its Cloudinary URL to imageUrls
         if (f.resource_type === 'image' && f.url && !imageUrls.includes(f.url)) {
           imageUrls.push(f.url);
         }
-        // Build download URL with fl_attachment query param for both images and documents
         let downloadUrl = f.url;
         if (f.url && f.originalname) {
-          downloadUrl = f.url + '?fl_attachment=' + encodeURIComponent(f.originalname);
+          // Always use query param for all file types
+          const baseUrl = f.url.split('?')[0];
+          downloadUrl = baseUrl + '?fl_attachment=' + encodeURIComponent(f.originalname);
         }
         return {
           filename: f.public_id,
@@ -240,10 +240,8 @@ router.put('/:id', auth, handleUploads([
       filesArr = filesArr.concat(req.uploads['files'].map(f => {
         let downloadUrl = f.url;
         if (f.url && f.originalname) {
-          const urlParts = f.url.split('/upload/');
-          if (urlParts.length === 2) {
-            downloadUrl = urlParts[0] + '/upload/fl_attachment:' + encodeURIComponent(f.originalname) + '/' + urlParts[1];
-          }
+          const baseUrl = f.url.split('?')[0];
+          downloadUrl = baseUrl + '?fl_attachment=' + encodeURIComponent(f.originalname);
         }
         return {
           filename: f.public_id,
