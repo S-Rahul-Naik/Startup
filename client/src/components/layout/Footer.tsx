@@ -39,11 +39,12 @@ const Footer: React.FC = () => {
   };
 
   const socialLinks = [
-    { name: 'Facebook', href: 'https://facebook.com/edutech', icon: 'facebook' },
-    { name: 'Twitter', href: 'https://twitter.com/edutech', icon: 'twitter' },
+    { name: 'Facebook', href: 'https://facebook.com/', icon: 'facebook' },
+    { name: 'Twitter', href: 'https://twitter.com/', icon: 'twitter' },
+    { name: 'Instagram', href: 'https://www.instagram.com/edutech_2k25/?hl=en', icon: 'instagram' },
     { name: 'LinkedIn', href: 'https://linkedin.com/company/edutech', icon: 'linkedin' },
-    { name: 'YouTube', href: 'https://youtube.com/edutech', icon: 'youtube' },
-    { name: 'Instagram', href: 'https://instagram.com/edutech', icon: 'instagram' },
+    { name: 'YouTube', href: 'https://youtube.com/', icon: 'youtube' },
+
   ];
 
   return (
