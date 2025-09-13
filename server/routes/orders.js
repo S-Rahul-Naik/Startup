@@ -335,27 +335,34 @@ router.post('/', auth, handleUploads([{ name: 'receipt', maxCount: 1 }]), async 
         email: deliveryAddress.email,
         subject: 'Order Confirmation - Edu Tech',
         html: `
-          <div style="max-width:480px;margin:40px auto;background:#fff;border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,0.08);padding:32px 24px;font-family:'Segoe UI',Arial,sans-serif;">
-            <div style="text-align:center;margin-bottom:24px;">
+          <div style="max-width:520px;margin:40px auto;background:#fff;border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,0.08);padding:0 0 24px 0;font-family:'Segoe UI',Arial,sans-serif;">
+            <div style="background:#f7f7fa;border-radius:16px 16px 0 0;padding:24px 32px 16px 32px;text-align:center;">
+              <img src="https://edutech-2k25.netlify.app/logo.png" alt="EduTech Logo" style="height:40px;margin-bottom:8px;"/>
+              <h1 style="margin:0;font-size:1.6rem;color:#3b3b3b;font-weight:700;letter-spacing:1px;">EduTech</h1>
+            </div>
+            <div style="text-align:center;margin:24px 0 16px 0;">
               <div style="display:inline-block;background:#e6f9ec;border-radius:50%;padding:16px;margin-bottom:8px;">
                 <span style="font-size:32px;color:#22c55e;">&#10003;</span>
               </div>
-              <h2 style="margin:0;font-size:1.5rem;color:#222;font-weight:600;">Payment Successful!</h2>
-              <p style="color:#666;margin:8px 0 0 0;">We have received your order and payment receipt.</p>
+              <h2 style="margin:0;font-size:1.3rem;color:#222;font-weight:600;">Payment Successful!</h2>
+              <p style="color:#666;margin:8px 0 0 0;">Hi ${deliveryAddress.name || 'User'}, we’ve received your payment successfully.</p>
             </div>
-            <div style="background:#f7f7fa;border-radius:12px;padding:20px 16px;margin-bottom:24px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-                <span style="font-weight:600;">Project:</span> <span>${project.title}</span>
-              </div>
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-                <span style="font-weight:600;">Amount:</span> <span>Rs. ${project.price}</span>
-              </div>
-              <div style="display:flex;align-items:center;justify-content:space-between;">
-                <span style="font-weight:600;">Order ID:</span> <span>${order._id}</span>
-              </div>
+            <div style="margin:0 auto 24px auto;max-width:400px;">
+              <table style="width:100%;border-collapse:collapse;background:#f7f7fa;border-radius:12px;overflow:hidden;">
+                <tr><td style="padding:10px 16px;font-weight:600;color:#444;">Project Name</td><td style="padding:10px 16px;">${project.title}</td></tr>
+                <tr><td style="padding:10px 16px;font-weight:600;color:#444;">Amount Paid</td><td style="padding:10px 16px;">Rs. ${project.price}</td></tr>
+                <tr><td style="padding:10px 16px;font-weight:600;color:#444;">Order ID</td><td style="padding:10px 16px;">${order._id}</td></tr>
+                <tr><td style="padding:10px 16px;font-weight:600;color:#444;">Payment Method</td><td style="padding:10px 16px;">UPI</td></tr>
+                <tr><td style="padding:10px 16px;font-weight:600;color:#444;">Date & Time</td><td style="padding:10px 16px;">${new Date().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}</td></tr>
+              </table>
             </div>
-            <div style="text-align:center;">
-              <a href="${receiptUrl}" style="display:inline-block;padding:10px 24px;background:#22c55e;color:#fff;border-radius:8px;text-decoration:none;font-weight:600;">View Receipt</a>
+            <div style="text-align:center;margin-bottom:24px;">
+              <a href="${receiptUrl}" style="display:inline-block;padding:12px 32px;background:#22c55e;color:#fff;border-radius:8px;text-decoration:none;font-weight:600;font-size:1rem;">Download Receipt</a>
+            </div>
+            <div style="border-top:1px solid #eee;padding:16px 32px 0 32px;text-align:center;font-size:0.95rem;color:#888;">
+              <div>Contact: <a href="mailto:edutech956@gmail.com" style="color:#667eea;text-decoration:underline;">edutech956@gmail.com</a> | <a href="https://edutech-2k25.netlify.app/contact" style="color:#667eea;text-decoration:underline;">Help</a></div>
+              <div style="margin-top:8px;font-size:0.9rem;">This is an automated email. If you have any questions, please contact us.</div>
+              <div style="margin-top:4px;font-size:0.85rem;">&copy; ${new Date().getFullYear()} EduTech. All rights reserved.</div>
             </div>
           </div>
         `
@@ -365,27 +372,34 @@ router.post('/', auth, handleUploads([{ name: 'receipt', maxCount: 1 }]), async 
         email: 'edutech956@gmail.com',
         subject: 'Order Confirmation - Edu Tech (Copy)',
         html: `
-          <div style="max-width:480px;margin:40px auto;background:#fff;border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,0.08);padding:32px 24px;font-family:'Segoe UI',Arial,sans-serif;">
-            <div style="text-align:center;margin-bottom:24px;">
+          <div style="max-width:520px;margin:40px auto;background:#fff;border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,0.08);padding:0 0 24px 0;font-family:'Segoe UI',Arial,sans-serif;">
+            <div style="background:#f7f7fa;border-radius:16px 16px 0 0;padding:24px 32px 16px 32px;text-align:center;">
+              <img src="https://edutech-2k25.netlify.app/logo.png" alt="EduTech Logo" style="height:40px;margin-bottom:8px;"/>
+              <h1 style="margin:0;font-size:1.6rem;color:#3b3b3b;font-weight:700;letter-spacing:1px;">EduTech</h1>
+            </div>
+            <div style="text-align:center;margin:24px 0 16px 0;">
               <div style="display:inline-block;background:#e6f9ec;border-radius:50%;padding:16px;margin-bottom:8px;">
                 <span style="font-size:32px;color:#22c55e;">&#10003;</span>
               </div>
-              <h2 style="margin:0;font-size:1.5rem;color:#222;font-weight:600;">Payment Successful!</h2>
-              <p style="color:#666;margin:8px 0 0 0;">We have received your order and payment receipt.</p>
+              <h2 style="margin:0;font-size:1.3rem;color:#222;font-weight:600;">Payment Successful!</h2>
+              <p style="color:#666;margin:8px 0 0 0;">Hi ${deliveryAddress.name || 'User'}, we’ve received your payment successfully.</p>
             </div>
-            <div style="background:#f7f7fa;border-radius:12px;padding:20px 16px;margin-bottom:24px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-                <span style="font-weight:600;">Project:</span> <span>${project.title}</span>
-              </div>
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-                <span style="font-weight:600;">Amount:</span> <span>Rs. ${project.price}</span>
-              </div>
-              <div style="display:flex;align-items:center;justify-content:space-between;">
-                <span style="font-weight:600;">Order ID:</span> <span>${order._id}</span>
-              </div>
+            <div style="margin:0 auto 24px auto;max-width:400px;">
+              <table style="width:100%;border-collapse:collapse;background:#f7f7fa;border-radius:12px;overflow:hidden;">
+                <tr><td style="padding:10px 16px;font-weight:600;color:#444;">Project Name</td><td style="padding:10px 16px;">${project.title}</td></tr>
+                <tr><td style="padding:10px 16px;font-weight:600;color:#444;">Amount Paid</td><td style="padding:10px 16px;">Rs. ${project.price}</td></tr>
+                <tr><td style="padding:10px 16px;font-weight:600;color:#444;">Order ID</td><td style="padding:10px 16px;">${order._id}</td></tr>
+                <tr><td style="padding:10px 16px;font-weight:600;color:#444;">Payment Method</td><td style="padding:10px 16px;">UPI</td></tr>
+                <tr><td style="padding:10px 16px;font-weight:600;color:#444;">Date & Time</td><td style="padding:10px 16px;">${new Date().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}</td></tr>
+              </table>
             </div>
-            <div style="text-align:center;">
-              <a href="${receiptUrl}" style="display:inline-block;padding:10px 24px;background:#22c55e;color:#fff;border-radius:8px;text-decoration:none;font-weight:600;">View Receipt</a>
+            <div style="text-align:center;margin-bottom:24px;">
+              <a href="${receiptUrl}" style="display:inline-block;padding:12px 32px;background:#22c55e;color:#fff;border-radius:8px;text-decoration:none;font-weight:600;font-size:1rem;">Download Receipt</a>
+            </div>
+            <div style="border-top:1px solid #eee;padding:16px 32px 0 32px;text-align:center;font-size:0.95rem;color:#888;">
+              <div>Contact: <a href="mailto:edutech956@gmail.com" style="color:#667eea;text-decoration:underline;">edutech956@gmail.com</a> | <a href="https://edutech-2k25.netlify.app/contact" style="color:#667eea;text-decoration:underline;">Help</a></div>
+              <div style="margin-top:8px;font-size:0.9rem;">This is an automated email. If you have any questions, please contact us.</div>
+              <div style="margin-top:4px;font-size:0.85rem;">&copy; ${new Date().getFullYear()} EduTech. All rights reserved.</div>
             </div>
           </div>
         `

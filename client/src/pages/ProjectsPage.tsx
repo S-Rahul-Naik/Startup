@@ -494,37 +494,30 @@ const ProjectsPage: React.FC = () => {
               >
                 {/* Project Image */}
                 <div className="relative bg-gray-200 overflow-hidden flex items-center justify-center" style={{ aspectRatio: '3/2' }}>
-                  {/* Reduce image height for a more compact card */}
+                  {/* Prefer project.images[0], fallback to project.files[0].path, else placeholder */}
                   {(() => {
-                    // Debug: Log project data
-                    console.log('Project:', project.title, 'Files:', project.files);
-                    
-                    // Check for uploaded image files first
-                    const imageFiles = project.files?.filter((file: any) => 
-                      file.mimetype?.startsWith('image/') || 
-                      file.originalname?.match(/\.(jpg|jpeg|png|gif|webp)$/i)
-                    );
-                    
-                    // Use Cloudinary URL for images if available
-                    if (imageFiles && imageFiles.length > 0 && imageFiles[0].path) {
-                      return (
-                        <img
-                          src={imageFiles[0].path}
-                          alt={project.title}
-                          className="absolute inset-0 w-full h-full object-cover object-center"
-                          onError={(e) => {
-                            // Fallback to placeholder if image fails to load
-                            e.currentTarget.style.display = 'none';
-                            e.currentTarget.nextElementSibling?.classList.remove('hidden');
-                          }}
-                        />
-                      );
-                    } else if (project.images && project.images.length > 0) {
+                    if (project.images && project.images.length > 0 && project.images[0]) {
                       return (
                         <img
                           src={project.images[0]}
                           alt={project.title}
                           className="absolute inset-0 w-full h-full object-cover object-center"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                          }}
+                        />
+                      );
+                    } else if (project.files && project.files.length > 0 && project.files[0].path) {
+                      return (
+                        <img
+                          src={project.files[0].path}
+                          alt={project.title}
+                          className="absolute inset-0 w-full h-full object-cover object-center"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                          }}
                         />
                       );
                     } else {
@@ -537,7 +530,7 @@ const ProjectsPage: React.FC = () => {
                           <span className="text-xs text-gray-400">Upload an image</span>
                         </div>
                       );
-                     }
+                    }
                   })()}
                                      {/* Fallback placeholder (hidden by default) */}
                    <div className="absolute inset-0 w-full h-full flex-col items-center justify-center text-gray-400 bg-gradient-to-br from-gray-100 to-gray-200 hidden">

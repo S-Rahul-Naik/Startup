@@ -143,13 +143,10 @@ router.post('/', auth, handleUploads([
         if (f.resource_type === 'image' && f.url && !imageUrls.includes(f.url)) {
           imageUrls.push(f.url);
         }
-        // Build download URL with fl_attachment and original filename
+        // Build download URL with fl_attachment query param for both images and documents
         let downloadUrl = f.url;
         if (f.url && f.originalname) {
-          const urlParts = f.url.split('/upload/');
-          if (urlParts.length === 2) {
-            downloadUrl = urlParts[0] + '/upload/fl_attachment:' + encodeURIComponent(f.originalname) + '/' + urlParts[1];
-          }
+          downloadUrl = f.url + '?fl_attachment=' + encodeURIComponent(f.originalname);
         }
         return {
           filename: f.public_id,
