@@ -37,19 +37,20 @@ router.get('/:id/invoice', auth, async (req, res) => {
       res.send(pdfData);
     });
 
-    const primaryBlue = '#2554c7';
-    const green = '#43d17a';
-    const lightBg = '#f8f9fa';
-    const sectionBg1 = '#f4f7fa';
-    const sectionBg2 = '#e9f0ffcc';
-    const sectionBg3 = '#e8f8f1cc';
-    const statusRefundedBg = '#f8d7da';
-    const statusRefundedText = '#842029';
-    const amountBoxBorder = '#b3dbb6';
-    const amountBoxText = '#0f9d58';
-    const white = '#fff';
-
-    // --- HEADER GRADIENT ---
+    // Colors and style
+    const COLORS = {
+      primaryBlue: '#2554c7',
+      green: '#43d17a',
+      lightBg: '#f8f9fa',
+      sectionBg1: '#f4f7fa',
+      sectionBg2: '#e9f0ffcc',
+      sectionBg3: '#e8f8f1cc',
+      statusRefundedBg: '#f8d7da',
+      statusRefundedText: '#842029',
+      amountBoxBorder: '#b3dbb6',
+      amountBoxText: '#0f9d58',
+      white: '#fff',
+    };
     const headerHeight = 90;
     const pageWidth = doc.page.width;
     const contentMargin = 40;
@@ -57,7 +58,7 @@ router.get('/:id/invoice', auth, async (req, res) => {
 
     // Draw header gradient
     const gradient = doc.linearGradient(0, 0, pageWidth, 0);
-    gradient.stop(0, primaryBlue).stop(1, green);
+    gradient.stop(0, COLORS.primaryBlue).stop(1, COLORS.green);
     doc.save();
     doc.rect(0, 0, pageWidth, headerHeight).fill(gradient);
     doc.restore();
@@ -69,8 +70,8 @@ router.get('/:id/invoice', auth, async (req, res) => {
     try {
       doc.image(logoPath, logoX, logoY, { width: 48, height: 48 });
     } catch (e) {
-      doc.circle(logoX + 24, logoY + 24, 24).fill('white').stroke(primaryBlue);
-      doc.fontSize(24).fillColor(primaryBlue).text('E', logoX + 12, logoY + 12, { width: 24, align: 'center' });
+      doc.circle(logoX + 24, logoY + 24, 24).fill(COLORS.white).stroke(COLORS.primaryBlue);
+      doc.fontSize(24).fillColor(COLORS.primaryBlue).text('E', logoX + 12, logoY + 12, { width: 24, align: 'center' });
     }
     doc.font('Helvetica-BoldOblique').fontSize(22).fillColor('white').text('EduTech', logoX + 60, logoY + 2, { continued: false });
     doc.font('Helvetica').fontSize(11).fillColor('white').text('Educational Technology Solutions', logoX + 60, logoY + 28);
@@ -123,18 +124,36 @@ router.get('/:id/invoice', auth, async (req, res) => {
     doc.font('Helvetica-Bold').fontSize(13).fillColor(primaryBlue).text('Order Details', contentMargin + 20, y + 18);
     let detailsY = y + 44;
     // Keys bold, values regular, consistent spacing
-    doc.font('Helvetica-Bold').fontSize(11).fillColor('black').text('Customer:', contentMargin + 20, detailsY, { continued: true });
-    doc.font('Helvetica').fontSize(11).text(`${order.user.firstName} ${order.user.lastName}`, { continued: false });
-    doc.font('Helvetica-Bold').fontSize(11).fillColor('black').text('Email:', contentMargin + 200, detailsY, { continued: true });
-    doc.font('Helvetica').fontSize(11).text(order.user.email || '', { continued: false });
-    doc.font('Helvetica-Bold').fontSize(11).fillColor('black').text('Phone:', contentMargin + 380, detailsY, { continued: true });
-    doc.font('Helvetica').fontSize(11).text(order.user.phone || '', { continued: false });
-    doc.font('Helvetica-Bold').fontSize(11).fillColor('black').text('Project:', contentMargin + 20, detailsY + 28, { continued: true });
-    doc.font('Helvetica').fontSize(11).text(order.project.title || '', { continued: false });
-    doc.font('Helvetica-Bold').fontSize(11).fillColor('black').text('Description:', contentMargin + 200, detailsY + 28, { continued: true });
-    let desc = order.project.description || '';
-    let descFontSize = desc.length > 40 ? 10 : 11;
-    doc.font('Helvetica').fontSize(descFontSize).text(desc, contentMargin + 290, detailsY + 28, { width: pageWidth - (contentMargin + 290) - 60 });
+      // Each field on a new line for clarity, with robust fallback
+      let lineY = detailsY;
+      const safe = (val, fallback = '-') => (val ? val : fallback);
+      doc.font('Helvetica-Bold').fontSize(11).fillColor('black').text('Customer:', contentMargin + 20, lineY);
+      doc.font('Helvetica').fontSize(11).text(safe(order.user.firstName, '') + ' ' + safe(order.user.lastName, ''), contentMargin + 120, lineY);
+      lineY += 18;
+      doc.font('Helvetica-Bold').fontSize(11).fillColor('black').text('Email:', contentMargin + 20, lineY);
+      doc.font('Helvetica').fontSize(11).text(safe(order.user.email), contentMargin + 120, lineY);
+      lineY += 18;
+      doc.font('Helvetica-Bold').fontSize(11).fillColor('black').text('Phone:', contentMargin + 20, lineY);
+      doc.font('Helvetica').fontSize(11).text(safe(order.user.phone), contentMargin + 120, lineY);
+      lineY += 18;
+      doc.font('Helvetica-Bold').fontSize(11).fillColor('black').text('Project:', contentMargin + 20, lineY);
+      doc.font('Helvetica').fontSize(11).text(safe(order.project.title), contentMargin + 120, lineY, { width: pageWidth - (contentMargin + 120) - 60 });
+      lineY += 18;
+      doc.font('Helvetica-Bold').fontSize(11).fillColor('black').text('Description:', contentMargin + 20, lineY);
+      let desc = safe(order.project.description);
+      let descFontSize = desc.length > 120 ? 9 : desc.length > 60 ? 10 : 11;
+      doc.font('Helvetica').fontSize(descFontSize).text(desc, contentMargin + 120, lineY, {
+        width: pageWidth - (contentMargin + 120) - 60,
+        align: 'left',
+        lineGap: 2
+      });
+      lineY += 30;
+      // Address (optional)
+      if (order.user.address) {
+        doc.font('Helvetica-Bold').fontSize(11).fillColor('black').text('Address:', contentMargin + 20, lineY);
+        doc.font('Helvetica').fontSize(11).text(safe(order.user.address), contentMargin + 120, lineY, { width: pageWidth - (contentMargin + 120) - 60 });
+        lineY += 18;
+      }
 
     // --- PAYMENT INFO SECTION ---
     y += 130;
@@ -162,10 +181,14 @@ router.get('/:id/invoice', auth, async (req, res) => {
     doc.font('Helvetica-Bold').fontSize(12).fillColor(primaryBlue).text('Summary', contentMargin + 20, y + 20);
     doc.font('Helvetica').fontSize(10).fillColor('black').text(`Order Status: ${statusText}`, contentMargin + 20, y + 44, { continued: true }).text(` | Order Date: ${new Date(order.createdAt).toLocaleString()}`, { continued: true }).text(` | Invoice Generated: ${new Date().toLocaleString()}`);
 
-    // --- FOOTER ---
-    doc.fontSize(12).fillColor('#555').text('Thank you for your business!', 0, y + 120, { align: 'center' });
-    doc.fontSize(11).fillColor('#777').text('EduTech | www.edutech.com', 0, y + 138, { align: 'center' });
-    doc.end();
+  // --- FOOTER ---
+  let footerY = y + 120;
+  doc.fontSize(12).fillColor('#555').text('Thank you for your business!', 0, footerY, { align: 'center' });
+  footerY += 18;
+  doc.fontSize(11).fillColor('#777').text('EduTech | www.edutech.com | support@edutech.com | +91-7672039975', 0, footerY, { align: 'center' });
+  footerY += 18;
+  doc.fontSize(9).fillColor('#aaa').text('This invoice is system generated and valid without signature.', 0, footerY, { align: 'center' });
+  doc.end();
   } catch (error) {
     console.error('Error generating invoice:', error);
     res.status(500).json({ error: 'Failed to generate invoice' });

@@ -231,10 +231,10 @@ const Header: React.FC = () => {
                   to="/register"
                   className="hidden xs:inline-block relative bg-primary-600 hover:bg-primary-700 text-white px-3 py-2 rounded-full text-sm font-semibold transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary-400 shadow-lg"
                   tabIndex={0}
-                  aria-label="Get Started"
+                  aria-label="Signup"
                   data-tooltip-id="getstarted-tooltip"
                 >
-                  <span className="transition-transform duration-150 ease-in-out group-hover:scale-110">Get Started</span>
+                  <span className="transition-transform duration-150 ease-in-out group-hover:scale-110">Signup</span>
                   <span className="absolute left-1/2 -translate-x-1/2 mt-2 w-max px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none z-50 whitespace-nowrap">Create a free account</span>
                 </Link>
               </div>
@@ -351,9 +351,9 @@ const Header: React.FC = () => {
                     className="relative block px-4 py-3 rounded-lg text-base bg-primary-600 text-white hover:bg-primary-700 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-400 shadow-lg"
                     onClick={() => setIsMobileMenuOpen(false)}
                     tabIndex={0}
-                    aria-label="Get Started"
+                    aria-label="Signup"
                   >
-                    <span className="transition-transform duration-150 ease-in-out group-hover:scale-110">Get Started</span>
+                    <span className="transition-transform duration-150 ease-in-out group-hover:scale-110">Signup</span>
                     <span className="absolute left-1/2 -translate-x-1/2 mt-2 w-max px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none z-50 whitespace-nowrap">Create a free account</span>
                   </Link>
                 </div>

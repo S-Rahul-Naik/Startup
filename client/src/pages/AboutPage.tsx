@@ -51,7 +51,7 @@ const AboutPage: React.FC = () => {
     {
       name: 'Harsha J N',
       role: 'Co-Founder & Lead Innovator',
-      expertise: 'National Hackathon winner in Electric Vehicles (EV), passionate about sustainable and future-ready solutions. ',
+      expertise: 'A state-level champion who represented Karnataka nationally in EV innovation. Focused on transforming ideas into sustainable technologies that drive real-world change. ',
       image: '/images/undraw_developer-avatar_f6ac.svg'
     },
     {
