@@ -43,7 +43,7 @@ const Footer: React.FC = () => {
     { name: 'Twitter', href: 'https://twitter.com/', icon: 'twitter' },
     { name: 'Instagram', href: 'https://www.instagram.com/edutech_2k25/?hl=en', icon: 'instagram' },
     { name: 'LinkedIn', href: 'https://linkedin.com/company/edutech', icon: 'linkedin' },
-    { name: 'YouTube', href: 'https://youtube.com/', icon: 'youtube' },
+    { name: 'YouTube', href: 'https://www.youtube.com/@EduTech2k25', icon: 'youtube' },
 
   ];
 

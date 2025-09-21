@@ -155,21 +155,7 @@ const ProjectDetailsPage: React.FC = () => {
           {activeTab === 'learningOutcomes' && (
             <div>
               <h3 className="text-xl font-semibold mb-2">Learning Outcomes</h3>
-              {project.learningOutcomes && Array.isArray(project.learningOutcomes) ? (
-                <ul className="list-disc pl-6 space-y-1">
-                  {project.learningOutcomes.map((outcome: string, idx: number) => (
-                    <li key={idx}>{outcome}</li>
-                  ))}
-                </ul>
-              ) : project.learningOutcomes ? (
-                <ul className="list-disc pl-6 space-y-1">
-                  {project.learningOutcomes.split('\n').map((outcome: string, idx: number) => (
-                    <li key={idx}>{outcome}</li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-gray-500">No learning outcomes provided.</p>
-              )}
+              <p className="text-gray-700 whitespace-pre-line">{project.learningOutcomes || 'No learning outcomes provided.'}</p>
             </div>
           )}
           {activeTab === 'files' && (

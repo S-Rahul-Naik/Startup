@@ -281,22 +281,7 @@ const Header: React.FC = () => {
                 </Link>
               ))}
               
-              {/* Mobile Project Categories */}
-              <div className="border-t border-gray-200 pt-2">
-                <div className="px-3 py-2 text-sm font-medium text-gray-500 uppercase tracking-wider">
-                  Project Categories
-                </div>
-                {projectCategories.map((category) => (
-                  <Link
-                    key={category.name}
-                    to={category.href}
-                    className="block px-3 py-2 rounded-md text-base text-gray-700 hover:text-primary-600 hover:bg-primary-50 transition-colors"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    {category.name}
-                  </Link>
-                ))}
-              </div>
+
 
               {/* Mobile User Menu */}
               {user ? (
