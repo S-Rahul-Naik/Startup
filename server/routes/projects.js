@@ -10,7 +10,7 @@ const { handleUploads } = require('../middleware/customUpload');
 // Get all projects (public)
 router.get('/', async (req, res) => {
   try {
-    const { category, search, page = 1, limit = 12 } = req.query;
+  const { category, search, page = 1, limit } = req.query;
     
     let query = { isPublished: true };
     
@@ -28,15 +28,18 @@ router.get('/', async (req, res) => {
       ];
     }
     
-    const skip = (page - 1) * limit;
-    
-    const projects = await Project.find(query)
+    let projectsQuery = Project.find(query)
       .populate('creator', 'firstName lastName email')
       .populate('category', 'name')
       .select('title description shortDescription price category domain difficulty creator isPublished files images rating views orders createdAt')
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(parseInt(limit));
+      .sort({ createdAt: -1 });
+
+    if (limit) {
+      const skip = (page - 1) * limit;
+      projectsQuery = projectsQuery.skip(skip).limit(parseInt(limit));
+    }
+
+    const projects = await projectsQuery;
     
     const total = await Project.countDocuments(query);
     

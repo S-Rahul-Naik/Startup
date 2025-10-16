@@ -53,7 +53,8 @@ async function uploadBufferToCloudinary(file, folder) {
     resource_type: resourceType,
     use_filename: true,
     unique_filename: false,
-    filename_override: file.originalname
+    filename_override: file.originalname,
+    type: resourceType === 'raw' ? 'upload' : undefined // Ensure raw files (PDF/docs) are always accessible
   };
 
   if (resourceType === 'raw') {
